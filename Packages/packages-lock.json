@@ -17,6 +17,12 @@
       "source": "local-tarball",
       "dependencies": {}
     },
+    "com.unity.2d.sprite": {
+      "version": "1.0.0",
+      "depth": 0,
+      "source": "builtin",
+      "dependencies": {}
+    },
     "com.unity.ai.navigation": {
       "version": "2.0.3",
       "depth": 0,
@@ -161,12 +167,12 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.sentis": {
-      "version": "2.1.0",
+      "version": "1.5.0-pre.3",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.unity.burst": "1.8.17",
-        "com.unity.collections": "2.4.3",
+        "com.unity.burst": "1.8.12",
+        "com.unity.collections": "1.2.4",
         "com.unity.modules.imageconversion": "1.0.0"
       },
       "url": "https://packages.unity.com"

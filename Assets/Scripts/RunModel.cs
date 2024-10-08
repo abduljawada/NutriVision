@@ -25,6 +25,7 @@ public class RunModel : MonoBehaviour
     [SerializeField] private ModelAsset asset;
     // Link the classes.txt here:
     [SerializeField] private TextAsset labelsAsset;
+    [SerializeField] private TMP_Text nutrientText;
     // Create a Raw Image in the scene and link it here:
     [SerializeField] private RawImage displayImage;
     [SerializeField] private CameraUpdate cam;
@@ -35,6 +36,8 @@ public class RunModel : MonoBehaviour
     private IWorker engine;
     private string[] labels;
     private RenderTexture targetRT;
+
+    private QueryScript queryScript => GetComponent<QueryScript>();
 
 
     //Image size for the model
@@ -146,7 +149,14 @@ public class RunModel : MonoBehaviour
                 label = labels[labelIDs[n]],
             };
             DrawBox(box, n, displayHeight * 0.05f);
+            Debug.Log(box.label);
+            RunQueryScript(box.label);
         }
+    }
+
+    private void RunQueryScript(string  itemName)
+    {
+        queryScript.QueryFruitAndDisplay(itemName);
     }
 
     public void DrawBox(BoundingBox box, int id, float fontSize)

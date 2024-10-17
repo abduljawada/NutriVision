@@ -2,7 +2,6 @@
 using Unity.Sentis;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
 /*
  *  YOLOv8n Inference Script
@@ -25,7 +24,6 @@ public class RunModel : MonoBehaviour
     [SerializeField] private ModelAsset asset;
     // Link the classes.txt here:
     [SerializeField] private TextAsset labelsAsset;
-    [SerializeField] private TMP_Text nutrientText;
     // Create a Raw Image in the scene and link it here:
     [SerializeField] private RawImage displayImage;
     [SerializeField] private CameraUpdate cam;
@@ -51,6 +49,9 @@ public class RunModel : MonoBehaviour
 
     [SerializeField, Range(0, 1)] float iouThreshold = 0.5f;
     [SerializeField, Range(0, 1)] float scoreThreshold = 0.5f;
+
+    private float detectionInterval = 0.1f;
+    private float lastDetectionTime;
 
     TensorFloat centersToCorners;
     //bounding box data
@@ -115,7 +116,16 @@ public class RunModel : MonoBehaviour
         engine = WorkerFactory.CreateWorker(BackendType.GPUCompute, model2);
     }
 
-    private void Update()
+    void Update()
+    {
+        if (Time.time >= lastDetectionTime + detectionInterval)
+        {
+            ProcessFrame();
+            lastDetectionTime = Time.time;
+        }
+    }
+
+    private void ProcessFrame()
     {
         ClearAnnotations();
 
@@ -148,8 +158,9 @@ public class RunModel : MonoBehaviour
                 height = output[n, 3] * scaleY,
                 label = labels[labelIDs[n]],
             };
+            if (box.label.ToLower().Trim() != "apple" && box.label.ToLower().Trim() != "banana") return;
             DrawBox(box, n, displayHeight * 0.05f);
-            Debug.Log(box.label);
+            //Debug.Log(box.label);
             RunQueryScript(box.label);
         }
     }
@@ -180,9 +191,9 @@ public class RunModel : MonoBehaviour
         rt.sizeDelta = new Vector2(box.width, box.height);
 
         //Set label text
-        var label = panel.GetComponentInChildren<TMP_Text>();
-        label.text = box.label;
-        label.fontSize = (int)fontSize;
+        //var label = panel.GetComponentInChildren<TMP_Text>();
+        //label.text = box.label;
+        //label.fontSize = (int)fontSize;
     }
 
     public GameObject CreateNewBox()

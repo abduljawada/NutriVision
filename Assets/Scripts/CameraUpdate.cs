@@ -9,7 +9,10 @@ public class CameraUpdate : MonoBehaviour
  
     void Start()
     {
-        //Application.targetFrameRate = 60;
+        Application.targetFrameRate = 60;
+        //webCamTexture = new WebCamTexture(640, 640, 5);
+        //rawImage.texture = webCamTexture;
+        //webCamTexture.Play();
         StartCoroutine("OpenCamera");
     }
  
@@ -50,7 +53,7 @@ public class CameraUpdate : MonoBehaviour
             {
                 string devicename = devices[0].name;
 
-                webCamTexture = new WebCamTexture(devicename, 1280, 720, 30)
+                webCamTexture = new WebCamTexture(devicename, 640, 640, 30)
                 {
                     wrapMode = TextureWrapMode.Mirror
                 };
@@ -67,12 +70,6 @@ public class CameraUpdate : MonoBehaviour
             Debug.LogError("未获得读取摄像头权限");
         }
 
-    }
-
-
-    public void Update()
-    {
-        
     }
  
     private void OnApplicationPause(bool pause)

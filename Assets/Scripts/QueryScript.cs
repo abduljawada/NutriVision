@@ -10,6 +10,8 @@ public class QueryScript : MonoBehaviour
     public TMP_Text outputText;        // UI Text to display the result
 
     private string csvPath;
+    private float initialShowTime = 5.0f;
+    private float showTime;
 
     // Fruit class to store nutritional information
     public class Fruit
@@ -42,10 +44,19 @@ public class QueryScript : MonoBehaviour
         csvPath = Path.Combine(Application.streamingAssetsPath, "fruits_nutrition.csv");
     }
 
-    //private void Update()
-    //{
-    //    QueryFruitAndDisplay();
-    //}
+    private void Update()
+    {
+        showTime -= Time.deltaTime;
+        if (showTime <= 0)
+        {
+            ClearText();
+        }
+    }
+
+    private void ClearText()
+    {
+        outputText.text = string.Empty;
+    }
 
     // Function to query a fruit from the CSV file by its name and return a formatted string
     public void QueryFruitAndDisplay()

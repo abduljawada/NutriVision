@@ -76,3 +76,6 @@ crashlytics-build.properties
 
 # Visual Studio Configuration
 .vsconfig
+
+# Android Build Temp Files
+.utmp/

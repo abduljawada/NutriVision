@@ -2,6 +2,7 @@
 using Unity.Sentis;
 using UnityEngine;
 using UnityEngine.UI;
+using System.IO;
 
 /*
  *  YOLOv8n Inference Script
@@ -31,7 +32,7 @@ public class RunModel : MonoBehaviour
 
 
     private Transform displayLocation;
-    private IWorker engine;
+    private IWorker worker;
     private string[] labels;
     private RenderTexture targetRT;
 
@@ -64,7 +65,6 @@ public class RunModel : MonoBehaviour
         public string label;
     }
 
-
     void Start()
     {
         //Parse neural net labels
@@ -81,8 +81,8 @@ public class RunModel : MonoBehaviour
     {
 
         //Load model
-        //var model1 = ModelLoader.Load(Path.Join(Application.streamingAssetsPath, modelName));
-        var model1 = ModelLoader.Load(asset);
+        //var sourceModel = ModelLoader.Load(Path.Join(Application.streamingAssetsPath, modelName));
+        var sourceModel = ModelLoader.Load(asset);
 
         centersToCorners = new TensorFloat(new TensorShape(4, 4),
         new float[]
@@ -93,27 +93,27 @@ public class RunModel : MonoBehaviour
                     0,      -0.5f,  0,      0.5f
         });
 
-        //Here we transform the output of the model1 by feeding it through a Non-Max-Suppression layer.
-        var model2 = Functional.Compile(
-               input =>
-               {
-                   var modelOutput = model1.Forward(input)[0];
-                   var boxCoords = modelOutput[0, 0..4, ..].Transpose(0, 1);        //shape=(8400,4)
-                   var allScores = modelOutput[0, 4.., ..];                         //shape=(80,8400)
-                   var scores = Functional.ReduceMax(allScores, 0) - scoreThreshold;        //shape=(8400)
-                   var classIDs = Functional.ArgMax(allScores, 0);                          //shape=(8400) 
-                   var boxCorners = Functional.MatMul(boxCoords, FunctionalTensor.FromTensor(centersToCorners));
-                   var indices = Functional.NMS(boxCorners, scores, iouThreshold);           //shape=(N)
-                   var indices2 = indices.Unsqueeze(-1).BroadcastTo(new int[] { 4 });//shape=(N,4)
-                   var coords = Functional.Gather(boxCoords, 0, indices2);                  //shape=(N,4)
-                   var labelIDs = Functional.Gather(classIDs, 0, indices);                  //shape=(N)
-                   return (coords, labelIDs);
-               },
-               InputDef.FromModel(model1)[0]
-         );
+        //Here we transform the output of the sourceModel by feeding it through a Non-Max-Suppression layer.
+        var runtimeModel = Functional.Compile(
+        input =>
+        {
+            var modelOutput = sourceModel.Forward(input)[0];
+            var boxCoords = modelOutput[0, 0..4, ..].Transpose(0, 1);        //shape=(8400,4)
+            var allScores = modelOutput[0, 4.., ..];                         //shape=(80,8400)
+            var scores = Functional.ReduceMax(allScores, 0) - scoreThreshold;        //shape=(8400)
+            var classIDs = Functional.ArgMax(allScores, 0);                          //shape=(8400) 
+            var boxCorners = Functional.MatMul(boxCoords, FunctionalTensor.FromTensor(centersToCorners));
+            var indices = Functional.NMS(boxCorners, scores, iouThreshold);           //shape=(N)
+            var indices2 = indices.Unsqueeze(-1).BroadcastTo(new int[] { 4 });//shape=(N,4)
+            var coords = Functional.Gather(boxCoords, 0, indices2);                  //shape=(N,4)
+            var labelIDs = Functional.Gather(classIDs, 0, indices);                  //shape=(N)
+            return (coords, labelIDs);
+        },
+        InputDef.FromModel(sourceModel)[0]
+        );
 
         //Create engine to run model
-        engine = WorkerFactory.CreateWorker(BackendType.GPUCompute, model2);
+        worker = WorkerFactory.CreateWorker(BackendType.GPUCompute, runtimeModel);
     }
 
     void Update()
@@ -132,13 +132,13 @@ public class RunModel : MonoBehaviour
         if (!cam.webCamTexture) return;
 
         using var input = TextureConverter.ToTensor(cam.webCamTexture, imageWidth, imageHeight, 3);
-        engine.Execute(input);
+        worker.Execute(input);
 
-        var output = engine.PeekOutput("output_0") as TensorFloat;
-        var labelIDs = engine.PeekOutput("output_1") as TensorInt;
+        var output = worker.PeekOutput("output_0") as TensorFloat;
+        var labelIDs = worker.PeekOutput("output_1") as TensorInt;
 
-        output.CompleteOperationsAndDownload();
-        labelIDs.CompleteOperationsAndDownload();
+        var cpuOutput = output.ReadbackAndClone();
+        var cpuLabelIDs = labelIDs.ReadbackAndClone();
 
         float displayWidth = displayImage.rectTransform.rect.width;
         float displayHeight = displayImage.rectTransform.rect.height;
@@ -146,23 +146,26 @@ public class RunModel : MonoBehaviour
         float scaleX = displayWidth / imageWidth;
         float scaleY = displayHeight / imageHeight;
 
-        int boxesFound = output.shape[0];
+        int boxesFound = cpuOutput.shape[0];
         //Draw the bounding boxes
         for (int n = 0; n < Mathf.Min(boxesFound, 200); n++)
         {
             var box = new BoundingBox
             {
-                centerX = output[n, 0] * scaleX - displayWidth / 2,
-                centerY = output[n, 1] * scaleY - displayHeight / 2,
-                width = output[n, 2] * scaleX,
-                height = output[n, 3] * scaleY,
-                label = labels[labelIDs[n]],
+                centerX = cpuOutput[n, 0] * scaleX - displayWidth / 2,
+                centerY = cpuOutput[n, 1] * scaleY - displayHeight / 2,
+                width = cpuOutput[n, 2] * scaleX,
+                height = cpuOutput[n, 3] * scaleY,
+                label = labels[cpuLabelIDs[n]],
             };
             if (box.label.ToLower().Trim() != "apple" && box.label.ToLower().Trim() != "banana") return;
             DrawBox(box, n, displayHeight * 0.05f);
             //Debug.Log(box.label);
             RunQueryScript(box.label);
         }
+
+        cpuOutput?.Dispose();
+        cpuLabelIDs?.Dispose();
     }
 
     private void RunQueryScript(string  itemName)
@@ -170,7 +173,7 @@ public class RunModel : MonoBehaviour
         queryScript.QueryFruitAndDisplay(itemName);
     }
 
-    public void DrawBox(BoundingBox box, int id, float fontSize)
+    private void DrawBox(BoundingBox box, int id, float fontSize)
     {
         //Create the bounding box graphic or get from pool
         GameObject panel;
@@ -216,6 +219,6 @@ public class RunModel : MonoBehaviour
     private void OnDestroy()
     {
         centersToCorners?.Dispose();
-        engine?.Dispose();
+        worker?.Dispose();
     }
 }

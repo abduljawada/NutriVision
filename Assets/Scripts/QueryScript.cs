@@ -77,6 +77,7 @@ public class QueryScript : MonoBehaviour
 
     public void QueryFruitAndDisplay(string fruitName)
     {
+        showTime = initialShowTime;
         fruitName = fruitName.ToLower().Trim();
         Fruit fruit = GetFruitByName(fruitName);
 

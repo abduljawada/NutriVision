@@ -42,7 +42,8 @@ RenderSettings:
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 12
+  serializedVersion: 13
+  m_BakeOnSceneLoad: 0
   m_GISettings:
     serializedVersion: 2
     m_BounceScale: 1
@@ -384,13 +385,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d03941e43d13bf140853d5c68aa3038c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  asset: {fileID: 5022602860645237092, guid: 2db8f16bc94e3224d96a359a0105d613, type: 3}
+  modelAsset: {fileID: 5022602860645237092, guid: 2db8f16bc94e3224d96a359a0105d613, type: 3}
   labelsAsset: {fileID: 4900000, guid: 942958a9fe548aa4d9067698675bd870, type: 3}
   displayImage: {fileID: 894810071}
   cam: {fileID: 2076086295}
   objectBox: {fileID: 9070006779960704585, guid: fd44850abe8c0ce42a2594ba401b3905, type: 3}
   iouThreshold: 0.5
   scoreThreshold: 0.5
+  detectionInterval: 0.1
 --- !u!114 &772058121
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -765,6 +767,7 @@ MonoBehaviour:
   m_DeselectOnBackgroundClick: 1
   m_PointerBehavior: 0
   m_CursorLockBehavior: 0
+  m_ScrollDeltaPerTick: 6
 --- !u!114 &1951473352
 MonoBehaviour:
   m_ObjectHideFlags: 0

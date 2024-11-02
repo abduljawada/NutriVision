@@ -22,7 +22,7 @@ using System.IO;
 public class RunModel : MonoBehaviour
 {
     // Drag the yolov8n.sentis file here
-    [SerializeField] private ModelAsset asset;
+    [SerializeField] private ModelAsset modelAsset;
     // Link the classes.txt here:
     [SerializeField] private TextAsset labelsAsset;
     // Create a Raw Image in the scene and link it here:
@@ -32,29 +32,25 @@ public class RunModel : MonoBehaviour
 
 
     private Transform displayLocation;
-    private IWorker worker;
+    private Worker worker;
     private string[] labels;
     private RenderTexture targetRT;
 
     private QueryScript queryScript => GetComponent<QueryScript>();
 
-
     //Image size for the model
     private const int imageWidth = 640;
     private const int imageHeight = 640;
-
-    //The number of classes in the model
-    private const int numClasses = 80;
 
     List<GameObject> boxPool = new();
 
     [SerializeField, Range(0, 1)] float iouThreshold = 0.5f;
     [SerializeField, Range(0, 1)] float scoreThreshold = 0.5f;
 
-    private float detectionInterval = 0.1f;
+    [SerializeField] private float detectionInterval = 0.1f;
     private float lastDetectionTime;
 
-    TensorFloat centersToCorners;
+    Tensor<float> centersToCorners;
     //bounding box data
     public struct BoundingBox
     {
@@ -82,9 +78,9 @@ public class RunModel : MonoBehaviour
 
         //Load model
         //var sourceModel = ModelLoader.Load(Path.Join(Application.streamingAssetsPath, modelName));
-        var sourceModel = ModelLoader.Load(asset);
+        Model sourceModel = ModelLoader.Load(modelAsset);
 
-        centersToCorners = new TensorFloat(new TensorShape(4, 4),
+        centersToCorners = new Tensor<float>(new TensorShape(4, 4),
         new float[]
         {
                     1,      0,      1,      0,
@@ -93,27 +89,43 @@ public class RunModel : MonoBehaviour
                     0,      -0.5f,  0,      0.5f
         });
 
+        FunctionalGraph graph = new();
+
+        FunctionalTensor input = graph.AddInputs(sourceModel)[0];
+        FunctionalTensor output = Functional.Forward(sourceModel, input)[0];
+        FunctionalTensor boxCoords = output[0, 0..4, ..].Transpose(0, 1);        //shape=(8400,4)
+        FunctionalTensor allScores = output[0, 4.., ..];                         //shape=(80,8400)
+        FunctionalTensor scores = Functional.ReduceMax(allScores, 0) - scoreThreshold;        //shape=(8400)
+        FunctionalTensor classIDs = Functional.ArgMax(allScores, 0);                          //shape=(8400) 
+        FunctionalTensor boxCorners = Functional.MatMul(boxCoords, Functional.Constant(centersToCorners));
+        FunctionalTensor indices = Functional.NMS(boxCorners, scores, iouThreshold);           //shape=(N)
+        FunctionalTensor indices2 = indices.Unsqueeze(-1).BroadcastTo(new int[] { 4 });//shape=(N,4)
+        FunctionalTensor coords = Functional.Gather(boxCoords, 0, indices2);                  //shape=(N,4)
+        FunctionalTensor labelIDs = Functional.Gather(classIDs, 0, indices);                  //shape=(N)
+        Model runtimeModel = graph.Compile(coords, labelIDs);
+
+
         //Here we transform the output of the sourceModel by feeding it through a Non-Max-Suppression layer.
-        var runtimeModel = Functional.Compile(
-        input =>
-        {
-            var modelOutput = sourceModel.Forward(input)[0];
-            var boxCoords = modelOutput[0, 0..4, ..].Transpose(0, 1);        //shape=(8400,4)
-            var allScores = modelOutput[0, 4.., ..];                         //shape=(80,8400)
-            var scores = Functional.ReduceMax(allScores, 0) - scoreThreshold;        //shape=(8400)
-            var classIDs = Functional.ArgMax(allScores, 0);                          //shape=(8400) 
-            var boxCorners = Functional.MatMul(boxCoords, FunctionalTensor.FromTensor(centersToCorners));
-            var indices = Functional.NMS(boxCorners, scores, iouThreshold);           //shape=(N)
-            var indices2 = indices.Unsqueeze(-1).BroadcastTo(new int[] { 4 });//shape=(N,4)
-            var coords = Functional.Gather(boxCoords, 0, indices2);                  //shape=(N,4)
-            var labelIDs = Functional.Gather(classIDs, 0, indices);                  //shape=(N)
-            return (coords, labelIDs);
-        },
-        InputDef.FromModel(sourceModel)[0]
-        );
+        //Model runtimeModel = Functional.Compile(
+        //input =>
+        //{
+        //    FunctionalTensor modelOutput = sourceModel.Forward(input)[0];
+        //    FunctionalTensor boxCoords = modelOutput[0, 0..4, ..].Transpose(0, 1);        //shape=(8400,4)
+        //    FunctionalTensor allScores = modelOutput[0, 4.., ..];                         //shape=(80,8400)
+        //    FunctionalTensor scores = Functional.ReduceMax(allScores, 0) - scoreThreshold;        //shape=(8400)
+        //    FunctionalTensor classIDs = Functional.ArgMax(allScores, 0);                          //shape=(8400) 
+        //    FunctionalTensor boxCorners = Functional.MatMul(boxCoords, FunctionalTensor.FromTensor(centersToCorners));
+        //    FunctionalTensor indices = Functional.NMS(boxCorners, scores, iouThreshold);           //shape=(N)
+        //    FunctionalTensor indices2 = indices.Unsqueeze(-1).BroadcastTo(new int[] { 4 });//shape=(N,4)
+        //    FunctionalTensor coords = Functional.Gather(boxCoords, 0, indices2);                  //shape=(N,4)
+        //    FunctionalTensor labelIDs = Functional.Gather(classIDs, 0, indices);                  //shape=(N)
+        //    return (coords, labelIDs);
+        //},
+        //InputDef.FromModel(sourceModel)[0]
+        //);
 
         //Create engine to run model
-        worker = WorkerFactory.CreateWorker(BackendType.GPUCompute, runtimeModel);
+        worker = new(runtimeModel, BackendType.GPUCompute);
     }
 
     void Update()
@@ -131,14 +143,19 @@ public class RunModel : MonoBehaviour
 
         if (!cam.webCamTexture) return;
 
-        using var input = TextureConverter.ToTensor(cam.webCamTexture, imageWidth, imageHeight, 3);
-        worker.Execute(input);
+        using Tensor<float> input = TextureConverter.ToTensor(cam.webCamTexture, imageWidth, imageHeight, 3);
+        worker.Schedule(input);
 
-        var output = worker.PeekOutput("output_0") as TensorFloat;
-        var labelIDs = worker.PeekOutput("output_1") as TensorInt;
+        input?.Dispose();
+
+        Tensor<float> output = worker.PeekOutput("output_0") as Tensor<float>;
+        Tensor<int> labelIDs = worker.PeekOutput("output_1") as Tensor<int>;
 
         var cpuOutput = output.ReadbackAndClone();
         var cpuLabelIDs = labelIDs.ReadbackAndClone();
+
+        output?.Dispose();
+        labelIDs.Dispose();
 
         float displayWidth = displayImage.rectTransform.rect.width;
         float displayHeight = displayImage.rectTransform.rect.height;
@@ -150,30 +167,26 @@ public class RunModel : MonoBehaviour
         //Draw the bounding boxes
         for (int n = 0; n < Mathf.Min(boxesFound, 200); n++)
         {
+            string label = labels[cpuLabelIDs[n]];
             var box = new BoundingBox
             {
                 centerX = cpuOutput[n, 0] * scaleX - displayWidth / 2,
                 centerY = cpuOutput[n, 1] * scaleY - displayHeight / 2,
                 width = cpuOutput[n, 2] * scaleX,
                 height = cpuOutput[n, 3] * scaleY,
-                label = labels[cpuLabelIDs[n]],
+                label = label,
             };
-            if (box.label.ToLower().Trim() != "apple" && box.label.ToLower().Trim() != "banana") return;
-            DrawBox(box, n, displayHeight * 0.05f);
+            if (label.ToLower().Trim() != "apple" && label.ToLower().Trim() != "banana") return;
+            DrawBox(box, n);
             //Debug.Log(box.label);
-            RunQueryScript(box.label);
+            queryScript.QueryFruitAndDisplay(label);
         }
 
         cpuOutput?.Dispose();
         cpuLabelIDs?.Dispose();
     }
 
-    private void RunQueryScript(string  itemName)
-    {
-        queryScript.QueryFruitAndDisplay(itemName);
-    }
-
-    private void DrawBox(BoundingBox box, int id, float fontSize)
+    private void DrawBox(BoundingBox box, int id)
     {
         //Create the bounding box graphic or get from pool
         GameObject panel;

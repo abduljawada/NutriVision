@@ -1,8 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Unity.Sentis;
 using UnityEngine;
 using UnityEngine.UI;
-using System.IO;
 
 /*
  *  YOLOv8n Inference Script
@@ -46,9 +47,15 @@ public class RunModel : MonoBehaviour
 
     [SerializeField, Range(0, 1)] float iouThreshold = 0.5f;
     [SerializeField, Range(0, 1)] float scoreThreshold = 0.5f;
+    [SerializeField] private int maxDetectionsInFrame = 10;
 
     [SerializeField] private float detectionInterval = 0.1f;
     private float lastDetectionTime;
+
+    const int k_LayersPerFrame = 20;
+    IEnumerator m_Schedule;
+    bool m_Started = false;
+
 
     Tensor<float> centersToCorners;
     //bounding box data
@@ -104,25 +111,9 @@ public class RunModel : MonoBehaviour
         FunctionalTensor labelIDs = Functional.Gather(classIDs, 0, indices);                  //shape=(N)
         Model runtimeModel = graph.Compile(coords, labelIDs);
 
+        //ModelQuantizer.QuantizeWeights(QuantizationType.Float16, ref runtimeModel);
 
         //Here we transform the output of the sourceModel by feeding it through a Non-Max-Suppression layer.
-        //Model runtimeModel = Functional.Compile(
-        //input =>
-        //{
-        //    FunctionalTensor modelOutput = sourceModel.Forward(input)[0];
-        //    FunctionalTensor boxCoords = modelOutput[0, 0..4, ..].Transpose(0, 1);        //shape=(8400,4)
-        //    FunctionalTensor allScores = modelOutput[0, 4.., ..];                         //shape=(80,8400)
-        //    FunctionalTensor scores = Functional.ReduceMax(allScores, 0) - scoreThreshold;        //shape=(8400)
-        //    FunctionalTensor classIDs = Functional.ArgMax(allScores, 0);                          //shape=(8400) 
-        //    FunctionalTensor boxCorners = Functional.MatMul(boxCoords, FunctionalTensor.FromTensor(centersToCorners));
-        //    FunctionalTensor indices = Functional.NMS(boxCorners, scores, iouThreshold);           //shape=(N)
-        //    FunctionalTensor indices2 = indices.Unsqueeze(-1).BroadcastTo(new int[] { 4 });//shape=(N,4)
-        //    FunctionalTensor coords = Functional.Gather(boxCoords, 0, indices2);                  //shape=(N,4)
-        //    FunctionalTensor labelIDs = Functional.Gather(classIDs, 0, indices);                  //shape=(N)
-        //    return (coords, labelIDs);
-        //},
-        //InputDef.FromModel(sourceModel)[0]
-        //);
 
         //Create engine to run model
         worker = new(runtimeModel, BackendType.GPUCompute);
@@ -130,29 +121,57 @@ public class RunModel : MonoBehaviour
 
     void Update()
     {
-        if (Time.time >= lastDetectionTime + detectionInterval)
+        //if (Time.time >= lastDetectionTime + detectionInterval && !m_Started)
+        //{
+        //    m_Started = true;
+        //    ProcessFrame();
+        //    lastDetectionTime = Time.time;
+        //}
+        if (!m_Started)
         {
             ProcessFrame();
-            lastDetectionTime = Time.time;
         }
     }
 
-    private void ProcessFrame()
+    private async void ProcessFrame()
     {
-        ClearAnnotations();
+        //if (!m_Started)
+        //{
+        //    if (!cam.webCamTexture) return;
+        //    using Tensor<float> input = TextureConverter.ToTensor(cam.webCamTexture, imageWidth, imageHeight, 3);
+        //    // ExecuteLayerByLayer starts the scheduling of the model
+        //    // It returns an IEnumerator to iterate over the model layers and schedule each layer sequentially
+        //    m_Schedule =  worker.ScheduleIterable(input);
+        //    m_Started = true;
+        //    input?.Dispose();
+        //    Debug.Log("Started Iteration");
+        //}
 
+        //int it = 0;
+        //while (m_Schedule.MoveNext())
+        //{
+        //    Debug.Log(it);
+        //    if (++it % k_LayersPerFrame == 0)
+        //        return;
+        //}
         if (!cam.webCamTexture) return;
 
+        m_Started = true;
+
         using Tensor<float> input = TextureConverter.ToTensor(cam.webCamTexture, imageWidth, imageHeight, 3);
-        worker.Schedule(input);
+
+        var outputs = await ForwardAsync(worker, input);
 
         input?.Dispose();
 
-        Tensor<float> output = worker.PeekOutput("output_0") as Tensor<float>;
-        Tensor<int> labelIDs = worker.PeekOutput("output_1") as Tensor<int>;
+        Tensor<float> output = outputs[0] as Tensor<float>;
+        Tensor<int> labelIDs = outputs[1] as Tensor<int>;
 
-        var cpuOutput = output.ReadbackAndClone();
-        var cpuLabelIDs = labelIDs.ReadbackAndClone();
+        //Tensor<float> output = worker.PeekOutput("output_0") as Tensor<float>;
+        //Tensor<int> labelIDs = worker.PeekOutput("output_1") as Tensor<int>;
+
+        var cpuOutput = await output.ReadbackAndCloneAsync();
+        var cpuLabelIDs = await labelIDs.ReadbackAndCloneAsync();
 
         output?.Dispose();
         labelIDs.Dispose();
@@ -164,10 +183,14 @@ public class RunModel : MonoBehaviour
         float scaleY = displayHeight / imageHeight;
 
         int boxesFound = cpuOutput.shape[0];
+
+        ClearAnnotations();
+
         //Draw the bounding boxes
-        for (int n = 0; n < Mathf.Min(boxesFound, 200); n++)
+        for (int n = 0; n < Mathf.Min(boxesFound, maxDetectionsInFrame); n++)
         {
             string label = labels[cpuLabelIDs[n]];
+            //Debug.Log(label);
             var box = new BoundingBox
             {
                 centerX = cpuOutput[n, 0] * scaleX - displayWidth / 2,
@@ -176,14 +199,40 @@ public class RunModel : MonoBehaviour
                 height = cpuOutput[n, 3] * scaleY,
                 label = label,
             };
-            if (label.ToLower().Trim() != "apple" && label.ToLower().Trim() != "banana") return;
-            DrawBox(box, n);
-            //Debug.Log(box.label);
-            queryScript.QueryFruitAndDisplay(label);
+
+            //Debug.Log(box.centerX + " " + box.centerY + " " + box.width + " " + box.height);
+            if (label.ToLower().Trim() == "apple" || label.ToLower().Trim() == "banana")
+            {
+                queryScript.QueryFruitAndDisplay(label);
+                DrawBox(box, n);
+            }
+            box.centerX = 100;
         }
 
+        m_Started = false;
         cpuOutput?.Dispose();
         cpuLabelIDs?.Dispose();
+    }
+
+    private async Task<Tensor[]> ForwardAsync(Worker modelWorker, Tensor inputs)
+    {
+        var executor = worker.ScheduleIterable(inputs);
+        var it = 0;
+        bool hasMoreWork;
+        do
+        {
+            hasMoreWork = executor.MoveNext();
+            if (++it % 20 == 0)
+            {
+                await Task.Delay(32);
+            }
+        } while (hasMoreWork);
+
+        var result1 = modelWorker.PeekOutput("output_0") as Tensor<float>;
+        var result2 = modelWorker.PeekOutput("output_1") as Tensor<int>;
+
+        Tensor[] results = {result1, result2};
+        return results;
     }
 
     private void DrawBox(BoundingBox box, int id)

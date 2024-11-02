@@ -3,7 +3,7 @@ using TMPro;
 
 public class FPS : MonoBehaviour
 {
-    public TMP_Text fpsText;
+    private TMP_Text fpsText => GetComponent<TMP_Text>();
     private float fps;
     private float intervalTime = 0.12f;
 

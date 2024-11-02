@@ -4,13 +4,13 @@ using UnityEngine.UI;
 
 public class CameraUpdate : MonoBehaviour
 {
-    public RawImage rawImage;//相机渲染的UI
+    [SerializeField] private RawImage rawImage;//相机渲染的UI
     public WebCamTexture webCamTexture;
  
     void Start()
     {
-        Application.targetFrameRate = 60;
-        //webCamTexture = new WebCamTexture(640, 640, 5);
+        //Application.targetFrameRate = 30;
+        //webCamTexture = new WebCamTexture(640, 640, 10);
         //rawImage.texture = webCamTexture;
         //webCamTexture.Play();
         StartCoroutine("OpenCamera");

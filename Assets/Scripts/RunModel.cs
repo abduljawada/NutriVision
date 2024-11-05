@@ -30,6 +30,7 @@ public class RunModel : MonoBehaviour
     [SerializeField] private RawImage displayImage;
     [SerializeField] private CameraUpdate cam;
     [SerializeField] private GameObject objectBox;
+    [SerializeField] private UIManager uiManager;
 
 
     private Transform displayLocation;
@@ -204,6 +205,8 @@ public class RunModel : MonoBehaviour
             if (label.ToLower().Trim() == "apple" || label.ToLower().Trim() == "banana")
             {
                 queryScript.QueryFruitAndDisplay(label);
+                uiManager.OnFoodSelected(label);
+                Debug.Log(label);
                 DrawBox(box, n);
             }
             box.centerX = 100;

@@ -53,7 +53,7 @@ public class CameraUpdate : MonoBehaviour
             {
                 string devicename = devices[0].name;
 
-                webCamTexture = new WebCamTexture(devicename, 640, 640, 30)
+                webCamTexture = new WebCamTexture(devicename, 480, 480, 30)
                 {
                     wrapMode = TextureWrapMode.Mirror
                 };

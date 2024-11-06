@@ -1719,8 +1719,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 94b40044d775f634e91ac02404fb6de9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  modelAsset: {fileID: 5022602860645237092, guid: 2db8f16bc94e3224d96a359a0105d613, type: 3}
-  labelsAsset: {fileID: 4900000, guid: 942958a9fe548aa4d9067698675bd870, type: 3}
+  modelAsset: {fileID: 5022602860645237092, guid: 45d0e4dc831220d4ca7f13f94acccf4e, type: 3}
+  labelsAsset: {fileID: 4900000, guid: 24689e4417f345549b8cc7b1f5121970, type: 3}
   displayImage: {fileID: 894810071}
   cam: {fileID: 2076086295}
   objectBox: {fileID: 9070006779960704585, guid: b4ed05fb342576c4ca67888bec9dae56, type: 3}

@@ -41,8 +41,8 @@ public class RunModel : MonoBehaviour
     private QueryScript queryScript => GetComponent<QueryScript>();
 
     //Image size for the model
-    private const int imageWidth = 640;
-    private const int imageHeight = 640;
+    private const int imageWidth = 480;
+    private const int imageHeight = 480;
 
     List<GameObject> boxPool = new();
 
@@ -202,13 +202,9 @@ public class RunModel : MonoBehaviour
             };
 
             //Debug.Log(box.centerX + " " + box.centerY + " " + box.width + " " + box.height);
-            if (label.ToLower().Trim() == "apple" || label.ToLower().Trim() == "banana")
-            {
-                queryScript.QueryFruitAndDisplay(label);
-                uiManager.OnFoodSelected(label);
-                Debug.Log(label);
-                DrawBox(box, n);
-            }
+            queryScript.QueryFruitAndDisplay(label);
+            uiManager.OnFoodSelected(label);
+            DrawBox(box, n);
             box.centerX = 100;
         }
 

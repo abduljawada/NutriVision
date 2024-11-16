@@ -5,14 +5,14 @@ using UnityEngine.UI;
 public class CameraUpdate : MonoBehaviour
 {
     [SerializeField] private RawImage rawImage;//相机渲染的UI
-    public WebCamTexture webCamTexture;
+    public WebCamTexture webcamTexture;
  
     void Start()
     {
         //Application.targetFrameRate = 30;
-        //webCamTexture = new WebCamTexture(640, 640, 10);
-        //rawImage.texture = webCamTexture;
-        //webCamTexture.Play();
+        //webcamTexture = new WebCamTexture(640, 640, 10);
+        //rawImage.texture = webcamTexture;
+        //webcamTexture.Play();
         StartCoroutine("OpenCamera");
     }
  
@@ -25,9 +25,9 @@ public class CameraUpdate : MonoBehaviour
         yield return Application.RequestUserAuthorization(UserAuthorization.WebCam);
         if (Application.HasUserAuthorization(UserAuthorization.WebCam))
         {
-            if (webCamTexture != null)
+            if (webcamTexture != null)
             {
-                webCamTexture.Stop();
+                webcamTexture.Stop();
             }
  
             //打开渲染图
@@ -53,17 +53,38 @@ public class CameraUpdate : MonoBehaviour
             {
                 string devicename = devices[0].name;
 
-                webCamTexture = new WebCamTexture(devicename, 480, 480, 30)
+                Resolution[] resolutions = devices[0].availableResolutions;
+                if (resolutions != null)
                 {
-                    wrapMode = TextureWrapMode.Mirror
-                };
+                    int best = 0;
+                    for (int j = 0; j < resolutions.Length; j++)
+                    {
+                        Debug.Log("Resoltions for Camera " + $" Width: {resolutions[j].width}, Height: {resolutions[j].height}, Refresh Rate: {resolutions[j].refreshRateRatio}");
+                        if (resolutions[j].width < resolutions[best].width && resolutions[j].width <= 640)
+                        {
+                            best = j;
+                        }
+                    }
+                    webcamTexture = new WebCamTexture(devicename, resolutions[best].width, resolutions[best].height);
+                    Debug.Log(resolutions[best].width + "x" + resolutions[best].height);
+                    rawImage.GetComponent<RectTransform>().sizeDelta = new Vector2(320, resolutions[best].height * 320 / resolutions[best].width);  
+                }
+                else
+                {
+                    webcamTexture = new WebCamTexture(devicename, 640, 640, 30)
+                    {
+                        wrapMode = TextureWrapMode.Mirror
+                    };
+                }
+
+
+
                 // 渲染到 UI 或者 游戏物体上
                 if (rawImage != null)
                 {
-                    rawImage.texture = webCamTexture;
+                    rawImage.texture = webcamTexture;
                 }
-
-                webCamTexture.Play();
+                webcamTexture.Play();
             }
         }
         else {
@@ -71,19 +92,19 @@ public class CameraUpdate : MonoBehaviour
         }
 
     }
- 
+
     private void OnApplicationPause(bool pause)
     {
         // 应用暂停的时候暂停camera，继续的时候继续使用
-        if (webCamTexture !=null)
+        if (webcamTexture !=null)
         {
             if (pause)
             {
-                webCamTexture.Pause();
+                webcamTexture.Pause();
             }
             else
             {
-                webCamTexture.Play();
+                webcamTexture.Play();
             }
         }
         
@@ -91,9 +112,9 @@ public class CameraUpdate : MonoBehaviour
     
     private void OnDestroy()
     {
-        if (webCamTexture != null)
+        if (webcamTexture != null)
         {
-            webCamTexture.Stop();
+            webcamTexture.Stop();
         }
     }
 }

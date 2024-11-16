@@ -1,11 +1,9 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
+using TMPro;
 
 public class FPS : MonoBehaviour
 {
-    public Text fpsText;
+    private TMP_Text fpsText => GetComponent<TMP_Text>();
     private float fps;
     private float intervalTime = 0.12f;
 

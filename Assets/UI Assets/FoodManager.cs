@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public class FoodManager
 {
@@ -13,15 +14,39 @@ public class FoodManager
     
     public void AddFood(FoodData foodData)
     {
-        foodList.Add(foodData);
+        var existingFood = foodList.FirstOrDefault(food => food.Name == foodData.Name);
+
+        if (existingFood != null)
+        {
+            existingFood.Calories += foodData.Calories;
+            existingFood.Protein += foodData.Protein;
+            existingFood.Carbs += foodData.Carbs;
+            existingFood.Fats += foodData.Fats;
+            existingFood.Quantity += foodData.Quantity;
+        }
+        else
+        {
+            foodList.Add(foodData);
+        }
     }
 
     public void RemoveFood(string foodName)
     {
-        FoodData foodToRemove = foodList.Find(food => food.Name == foodName);
+        var foodToRemove = foodList.Find(food => food.Name == foodName);
         if (foodToRemove != null)
-        {
-            foodList.Remove(foodToRemove);
+        {   
+            if (foodToRemove.Quantity == 1)
+            {
+                foodList.Remove(foodToRemove);
+            }
+            else
+            {
+                foodToRemove.Calories -= foodToRemove.Calories/foodToRemove.Quantity;
+                foodToRemove.Protein -= foodToRemove.Protein/foodToRemove.Quantity;
+                foodToRemove.Carbs -= foodToRemove.Carbs/foodToRemove.Quantity;
+                foodToRemove.Fats -= foodToRemove.Fats/foodToRemove.Quantity;
+                foodToRemove.Quantity--;
+            }
         }
     }
 

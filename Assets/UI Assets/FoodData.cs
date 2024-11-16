@@ -8,4 +8,6 @@ public class FoodData
     public float Protein;
     public float Carbs;
     public float Fats;
+
+    public int Quantity = 1;
 }

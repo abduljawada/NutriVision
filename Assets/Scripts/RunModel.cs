@@ -5,31 +5,14 @@ using Unity.Sentis;
 using UnityEngine;
 using UnityEngine.UI;
 
-/*
- *  YOLOv8n Inference Script
- *  ========================
- * 
- * Place this script on the Main Camera.
- * 
- * Place the yolob8n.sentis file in the asset folder and drag onto the asset field
- * Place a *.mp4 video file in the Assets/StreamingAssets folder
- * Create a RawImage in your scene and set it as the displayImage field
- * Drag the classes.txt into the labelsAsset field
- * Add a reference to a sprite image for the bounding box and a font for the text
- * 
- */
-
-
 public class RunModel : MonoBehaviour
 {
-    // Drag the yolov8n.sentis file here
     [SerializeField] private ModelAsset modelAsset;
-    // Link the classes.txt here:
     [SerializeField] private TextAsset labelsAsset;
-    // Create a Raw Image in the scene and link it here:
     [SerializeField] private RawImage displayImage;
     [SerializeField] private CameraUpdate cam;
     [SerializeField] private GameObject objectBox;
+    [SerializeField] private UIManager uiManager;
 
 
     private Transform displayLocation;
@@ -37,9 +20,6 @@ public class RunModel : MonoBehaviour
     private string[] labels;
     private RenderTexture targetRT;
 
-    private QueryScript queryScript => GetComponent<QueryScript>();
-
-    //Image size for the model
     private const int imageWidth = 640;
     private const int imageHeight = 640;
 
@@ -91,9 +71,7 @@ public class RunModel : MonoBehaviour
     }
     void LoadModel()
     {
-
         //Load model
-        //var sourceModel = ModelLoader.Load(Path.Join(Application.streamingAssetsPath, modelName));
         Model sourceModel = ModelLoader.Load(modelAsset);
 
         centersToCorners = new Tensor<float>(new TensorShape(4, 4),
@@ -107,7 +85,6 @@ public class RunModel : MonoBehaviour
 
         FunctionalGraph graph = new();
 
-        Debug.Log(scoreThreshold);
         FunctionalTensor input = graph.AddInputs(sourceModel)[0];
         FunctionalTensor output = Functional.Forward(sourceModel, input)[0];
         FunctionalTensor boxCoords = output[0, 0..4, ..].Transpose(0, 1);        //shape=(8400,4)
@@ -121,20 +98,12 @@ public class RunModel : MonoBehaviour
         FunctionalTensor labelIDs = Functional.Gather(classIDs, 0, indices);                  //shape=(N)
         Model runtimeModel = graph.Compile(coords, labelIDs);
 
-        //Here we transform the output of the sourceModel by feeding it through a Non-Max-Suppression layer.
-
         //Create engine to run model
         worker = new(runtimeModel, BackendType.GPUCompute);
     }
 
     void Update()
     {
-        //if (Time.time >= lastDetectionTime + detectionInterval && !m_Started)
-        //{
-        //    m_Started = true;
-        //    ProcessFrame();
-        //    lastDetectionTime = Time.time;
-        //}
         if (!m_Started)
         {
             ProcessFrame();
@@ -143,25 +112,6 @@ public class RunModel : MonoBehaviour
 
     private async void ProcessFrame()
     {
-        //if (!m_Started)
-        //{
-        //    if (!cam.webcamTexture) return;
-        //    using Tensor<float> input = TextureConverter.ToTensor(cam.webcamTexture, imageWidth, imageHeight, 3);
-        //    // ExecuteLayerByLayer starts the scheduling of the model
-        //    // It returns an IEnumerator to iterate over the model layers and schedule each layer sequentially
-        //    m_Schedule =  worker.ScheduleIterable(input);
-        //    m_Started = true;
-        //    input?.Dispose();
-        //    Debug.Log("Started Iteration");
-        //}
-
-        //int it = 0;
-        //while (m_Schedule.MoveNext())
-        //{
-        //    Debug.Log(it);
-        //    if (++it % k_LayersPerFrame == 0)
-        //        return;
-        //}
         if (!cam.webcamTexture) return;
 
         m_Started = true;
@@ -174,9 +124,6 @@ public class RunModel : MonoBehaviour
 
         Tensor<float> output = outputs[0] as Tensor<float>;
         Tensor<int> labelIDs = outputs[1] as Tensor<int>;
-
-        //Tensor<float> output = worker.PeekOutput("output_0") as Tensor<float>;
-        //Tensor<int> labelIDs = worker.PeekOutput("output_1") as Tensor<int>;
 
         var cpuOutput = await output.ReadbackAndCloneAsync();
         var cpuLabelIDs = await labelIDs.ReadbackAndCloneAsync();
@@ -198,7 +145,6 @@ public class RunModel : MonoBehaviour
         for (int n = 0; n < Mathf.Min(boxesFound, maxDetectionsInFrame); n++)
         {
             string label = labels[cpuLabelIDs[n]];
-            //Debug.Log(label);
             var box = new BoundingBox
             {
                 centerX = cpuOutput[n, 0] * scaleX - displayWidth / 2,
@@ -208,8 +154,7 @@ public class RunModel : MonoBehaviour
                 label = label,
             };
 
-            //Debug.Log(box.centerX + " " + box.centerY + " " + box.width + " " + box.height);
-            queryScript.QueryFruitAndDisplay(label);
+            uiManager.OnFoodSelected(label);
             DrawBox(box, n);
         }
 
@@ -259,7 +204,6 @@ public class RunModel : MonoBehaviour
         RectTransform rt = panel.GetComponent<RectTransform>();
         rt.sizeDelta = new Vector2(box.width, box.height);
 
-        //Set label text
         //var label = panel.GetComponentInChildren<TMP_Text>();
         //label.text = box.label;
         //label.fontSize = (int)fontSize;

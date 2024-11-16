@@ -1,31 +1,32 @@
 using UnityEngine;
-using TMPro; // Import TextMeshPro namespace
+using TMPro;
+using System.IO;
 
 public class UIManager : MonoBehaviour
 {
-    public string csvFilePath;
-    
+    [SerializeField] private string csvFileName = "fruits_nutrition.csv";
+
     // Change Text to TextMeshProUGUI
-    public TextMeshProUGUI foodNameText;
-    public TextMeshProUGUI caloriesText;
-    public TextMeshProUGUI proteinText;
-    public TextMeshProUGUI carbsText;
-    public TextMeshProUGUI fatsText;
+    [SerializeField] private TextMeshProUGUI foodNameText;
+    [SerializeField] private TextMeshProUGUI caloriesText;
+    [SerializeField] private TextMeshProUGUI proteinText;
+    [SerializeField] private TextMeshProUGUI carbsText;
+    [SerializeField] private TextMeshProUGUI fatsText;
 
     // UI elements for total nutritional info
-    public TextMeshProUGUI totalCaloriesText;
-    public TextMeshProUGUI totalProteinText;
-    public TextMeshProUGUI totalCarbsText;
-    public TextMeshProUGUI totalFatsText;
+    [SerializeField] private TextMeshProUGUI totalCaloriesText;
+    [SerializeField] private TextMeshProUGUI totalProteinText;
+    [SerializeField] private TextMeshProUGUI totalCarbsText;
+    [SerializeField] private TextMeshProUGUI totalFatsText;
 
-    public TextMeshProUGUI foodListText;
+    [SerializeField] private TextMeshProUGUI foodListText;
 
     private CSVQuery csvQuery;
     private FoodManager foodManager;
 
     private void Start()
     {
-        csvQuery = new CSVQuery(csvFilePath);
+        csvQuery = new CSVQuery(Path.Combine(Application.streamingAssetsPath, csvFileName));
         foodManager = new FoodManager();
     }
 
@@ -40,7 +41,7 @@ public class UIManager : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("Food item not found in CSV.");
+            Debug.LogWarning(foodName + " is not found in CSV.");
         }
     }
 

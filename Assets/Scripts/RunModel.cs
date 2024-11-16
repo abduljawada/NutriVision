@@ -30,7 +30,6 @@ public class RunModel : MonoBehaviour
     [SerializeField] private RawImage displayImage;
     [SerializeField] private CameraUpdate cam;
     [SerializeField] private GameObject objectBox;
-    [SerializeField] private UIManager uiManager;
 
 
     private Transform displayLocation;
@@ -41,8 +40,8 @@ public class RunModel : MonoBehaviour
     private QueryScript queryScript => GetComponent<QueryScript>();
 
     //Image size for the model
-    private const int imageWidth = 480;
-    private const int imageHeight = 480;
+    private const int imageWidth = 640;
+    private const int imageHeight = 640;
 
     List<GameObject> boxPool = new();
 
@@ -50,7 +49,6 @@ public class RunModel : MonoBehaviour
     [SerializeField, Range(0, 1)] float scoreThreshold = 0.5f;
     [SerializeField] private int maxDetectionsInFrame = 10;
 
-    [SerializeField] private float detectionInterval = 0.1f;
     private float lastDetectionTime;
 
     const int k_LayersPerFrame = 20;
@@ -67,6 +65,16 @@ public class RunModel : MonoBehaviour
         public float width;
         public float height;
         public string label;
+    }
+
+    public void SetScoreThreshold(float newScoreThreshold)
+    {
+        scoreThreshold = newScoreThreshold;
+    }
+
+    public void SetIouThreshold(float newIouThreshold)
+    {
+        iouThreshold = newIouThreshold;
     }
 
     void Start()
@@ -99,20 +107,19 @@ public class RunModel : MonoBehaviour
 
         FunctionalGraph graph = new();
 
+        Debug.Log(scoreThreshold);
         FunctionalTensor input = graph.AddInputs(sourceModel)[0];
         FunctionalTensor output = Functional.Forward(sourceModel, input)[0];
         FunctionalTensor boxCoords = output[0, 0..4, ..].Transpose(0, 1);        //shape=(8400,4)
         FunctionalTensor allScores = output[0, 4.., ..];                         //shape=(80,8400)
-        FunctionalTensor scores = Functional.ReduceMax(allScores, 0) - scoreThreshold;        //shape=(8400)
+        FunctionalTensor scores = Functional.ReduceMax(allScores, 0);        //shape=(8400)
         FunctionalTensor classIDs = Functional.ArgMax(allScores, 0);                          //shape=(8400) 
         FunctionalTensor boxCorners = Functional.MatMul(boxCoords, Functional.Constant(centersToCorners));
-        FunctionalTensor indices = Functional.NMS(boxCorners, scores, iouThreshold);           //shape=(N)
+        FunctionalTensor indices = Functional.NMS(boxCorners, scores, iouThreshold, scoreThreshold);           //shape=(N)
         FunctionalTensor indices2 = indices.Unsqueeze(-1).BroadcastTo(new int[] { 4 });//shape=(N,4)
         FunctionalTensor coords = Functional.Gather(boxCoords, 0, indices2);                  //shape=(N,4)
         FunctionalTensor labelIDs = Functional.Gather(classIDs, 0, indices);                  //shape=(N)
         Model runtimeModel = graph.Compile(coords, labelIDs);
-
-        //ModelQuantizer.QuantizeWeights(QuantizationType.Float16, ref runtimeModel);
 
         //Here we transform the output of the sourceModel by feeding it through a Non-Max-Suppression layer.
 
@@ -138,8 +145,8 @@ public class RunModel : MonoBehaviour
     {
         //if (!m_Started)
         //{
-        //    if (!cam.webCamTexture) return;
-        //    using Tensor<float> input = TextureConverter.ToTensor(cam.webCamTexture, imageWidth, imageHeight, 3);
+        //    if (!cam.webcamTexture) return;
+        //    using Tensor<float> input = TextureConverter.ToTensor(cam.webcamTexture, imageWidth, imageHeight, 3);
         //    // ExecuteLayerByLayer starts the scheduling of the model
         //    // It returns an IEnumerator to iterate over the model layers and schedule each layer sequentially
         //    m_Schedule =  worker.ScheduleIterable(input);
@@ -155,11 +162,11 @@ public class RunModel : MonoBehaviour
         //    if (++it % k_LayersPerFrame == 0)
         //        return;
         //}
-        if (!cam.webCamTexture) return;
+        if (!cam.webcamTexture) return;
 
         m_Started = true;
 
-        using Tensor<float> input = TextureConverter.ToTensor(cam.webCamTexture, imageWidth, imageHeight, 3);
+        using Tensor<float> input = TextureConverter.ToTensor(cam.webcamTexture, imageWidth, imageHeight, 3);
 
         var outputs = await ForwardAsync(worker, input);
 
@@ -203,9 +210,7 @@ public class RunModel : MonoBehaviour
 
             //Debug.Log(box.centerX + " " + box.centerY + " " + box.width + " " + box.height);
             queryScript.QueryFruitAndDisplay(label);
-            uiManager.OnFoodSelected(label);
             DrawBox(box, n);
-            box.centerX = 100;
         }
 
         m_Started = false;

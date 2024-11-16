@@ -77,7 +77,7 @@ public class QueryScript : MonoBehaviour
         }
         else
         {
-            outputText.text = "Fruit not found in the database.";
+            outputText.text = fruitName;
         }
     }
 
@@ -199,6 +199,6 @@ public class QueryScript : MonoBehaviour
             }
         }
 
-        outputText.text = "Fruit not found in the database.";
+        outputText.text = name;
     }
 }

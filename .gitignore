@@ -79,3 +79,5 @@ crashlytics-build.properties
 
 # Android Build Temp Files
 .utmp/
+
+.vscode

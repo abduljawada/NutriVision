@@ -4,6 +4,7 @@ using System.IO;
 
 public class UIManager : MonoBehaviour
 {
+    public static UIManager Instance { get; private set; }
     [SerializeField] private string csvFileName = "fruits_nutrition.csv";
 
     // Change Text to TextMeshProUGUI
@@ -23,6 +24,19 @@ public class UIManager : MonoBehaviour
 
     private CSVQuery csvQuery;
     private FoodManager foodManager;
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
 
     private void Start()
     {
@@ -48,7 +62,7 @@ public class UIManager : MonoBehaviour
     public void AddSelectedFood()
     {
         foodManager.AddFood(foodManager.getSelected());
-        foodListText.text += "\n> " + foodManager.getSelected().Name + "             " + foodManager.getSelected().Calories + "kCal";
+        foodListText.text += "\n> " + foodManager.getSelected().Name + "\n>" + foodManager.getSelected().Calories + "kCal";
         UpdateTotalNutritionalValues();
     } 
 
@@ -74,5 +88,20 @@ public class UIManager : MonoBehaviour
     {
         foodManager.RemoveFood(foodName);
         UpdateTotalNutritionalValues(); // Update totals after removing
+    }
+
+    public void OnLogoutButtonPressed()
+    {
+        Debug.Log("Logout button pressed.");
+        if (AuthHandler.Instance != null)
+        {
+            Debug.Log("AuthHandler found.");
+            AuthHandler.Instance.Logout();  // Directly call the Logout method on the Singleton
+        }
+        else
+        {
+            Debug.LogError("AuthHandler instance not found.");
+            // You could show a fallback UI or try to reload the scene if needed
+        }
     }
 }

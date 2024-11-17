@@ -12,7 +12,6 @@ public class RunModel : MonoBehaviour
     [SerializeField] private RawImage displayImage;
     [SerializeField] private CameraUpdate cam;
     [SerializeField] private GameObject objectBox;
-    [SerializeField] private UIManager uiManager;
 
 
     private Transform displayLocation;
@@ -154,7 +153,7 @@ public class RunModel : MonoBehaviour
                 label = label,
             };
 
-            uiManager.OnFoodSelected(label);
+            UIManager.Instance.OnFoodSelected(label);
             DrawBox(box, n);
         }
 

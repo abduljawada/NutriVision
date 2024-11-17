@@ -7,12 +7,15 @@ using Firebase.Auth;
 using System.Threading.Tasks;
 using System;
 using System.ComponentModel;
+using System.Runtime.InteropServices;
+using UnityEngine.SceneManagement;
 
 public class AuthHandler : MonoBehaviour
 {
 
+    public static AuthHandler Instance { get; private set; } // Singleton instance
+
     public TMP_Text message;
-    public AuthUIManager authUI;
 
     [Header("Firebase")]
     public DependencyStatus dependencyStatus;
@@ -32,21 +35,42 @@ public class AuthHandler : MonoBehaviour
     public TMP_InputField passwordRegisterField;
     public TMP_InputField confirmPasswordRegisterField;
 
-    void Awake()
+    private void Awake()
     {
-        FirebaseApp.CheckAndFixDependenciesAsync().ContinueWith(task =>
+        if (Instance == null)
         {
-            dependencyStatus = task.Result;
+            Instance = this; // Set the singleton instance
+            DontDestroyOnLoad(this.gameObject); // Persist across scenes
+        }
+        else
+        {
+            Destroy(this.gameObject); // Prevent duplicate instances
+        }
+    }
+    private void Start()
+    {
+
+        StartCoroutine(CheckAndFixDependenciesAsync());
+    }
+
+    private IEnumerator CheckAndFixDependenciesAsync()
+    {
+        var dependencyTask = FirebaseApp.CheckAndFixDependenciesAsync();
+
+        yield return new WaitUntil(() => dependencyTask.IsCompleted);
+
+        dependencyStatus = dependencyTask.Result;
 
             if (dependencyStatus == DependencyStatus.Available)
             {
                 InitializeFirebase();
+                yield return new WaitForEndOfFrame();
+                StartCoroutine(CheckForAutoLogin());
             }
             else
             {
                 Debug.LogError("Could not resolve all firebase dependencies: " +dependencyStatus);
             }
-        });  
     }
     
     void InitializeFirebase() 
@@ -56,6 +80,34 @@ public class AuthHandler : MonoBehaviour
         
         auth.StateChanged += AuthStateChanged;
         AuthStateChanged(this, null);
+    }
+
+    private IEnumerator CheckForAutoLogin()
+    {
+        if(user != null)
+        {
+            var reloadUser = user.ReloadAsync();
+
+            yield return new WaitUntil(() => reloadUser.IsCompleted);
+
+            AutoLogin();
+        }
+        else
+        {
+            AuthUIManager.Instance.BackButton();
+        }
+    }
+
+    private void AutoLogin()
+    {
+        if(user != null)
+        {
+            UnityEngine.SceneManagement.SceneManager.LoadScene("Main");
+        }
+        else
+        {
+            AuthUIManager.Instance.BackButton();
+        }
     }
 
     // Track state changes of the auth object
@@ -68,6 +120,9 @@ public class AuthHandler : MonoBehaviour
             if(!signedIn && user != null)
             {
                 Debug.Log("Signed out " + user.UserId);
+                //authUI.BackButton();
+                UnityEngine.SceneManagement.SceneManager.LoadScene("Authentication");
+
             }
 
             user = auth.CurrentUser;
@@ -76,6 +131,14 @@ public class AuthHandler : MonoBehaviour
             {
                 Debug.Log("Signed in " + user.UserId);
             }
+        }
+    }
+
+    public void Logout()
+    {
+        if(auth != null && user != null)
+        {
+            auth.SignOut();
         }
     }
 
@@ -231,7 +294,7 @@ public class AuthHandler : MonoBehaviour
                 {
                     Debug.Log("Registration Sucessful! Welcome " + user.DisplayName);
                     message.SetText("Registration Sucessful! Welcome " + user.DisplayName);
-                    authUI.BackButton();
+                    AuthUIManager.Instance.BackButton();
                 }
 
             }

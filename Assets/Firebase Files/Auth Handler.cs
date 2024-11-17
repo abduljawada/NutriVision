@@ -11,6 +11,9 @@ using System.ComponentModel;
 public class AuthHandler : MonoBehaviour
 {
 
+    public TMP_Text message;
+    public AuthUIManager authUI;
+
     [Header("Firebase")]
     public DependencyStatus dependencyStatus;
     public FirebaseAuth auth;
@@ -116,12 +119,13 @@ public class AuthHandler : MonoBehaviour
             }
 
             Debug.Log(failedMessage);
+            message.SetText(failedMessage);
         }
         else
         {
             user = loginTask.Result.User;
-
             Debug.LogFormat("{0} succesfully logged in!", user.DisplayName);
+            UnityEngine.SceneManagement.SceneManager.LoadScene("Main");
 
         }
     }
@@ -138,11 +142,13 @@ public class AuthHandler : MonoBehaviour
         {   
             string errorMessage = "One or more fields are empty.";
             Debug.LogError(errorMessage);
+            message.SetText(errorMessage);
         }
         else if (passwordRegisterField.text != confirmPasswordRegisterField.text)
         {
             string errorMessage = "Passwords do not match.";
             Debug.LogError(errorMessage);
+            message.SetText(errorMessage);
         }
         else
         {
@@ -177,6 +183,7 @@ public class AuthHandler : MonoBehaviour
                         break;
                 }
                 Debug.Log(failedMessage);
+                message.SetText(failedMessage);
             }
             else
             {
@@ -218,10 +225,13 @@ public class AuthHandler : MonoBehaviour
                             break;
                     }
                     Debug.Log(failedMessage);
+                    message.SetText(failedMessage);
                 }
                 else
                 {
                     Debug.Log("Registration Sucessful! Welcome " + user.DisplayName);
+                    message.SetText("Registration Sucessful! Welcome " + user.DisplayName);
+                    authUI.BackButton();
                 }
 
             }

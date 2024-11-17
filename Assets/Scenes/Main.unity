@@ -1124,7 +1124,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &391463219
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2589,7 +2589,7 @@ GameObject:
   - component: {fileID: 886823082}
   - component: {fileID: 886823081}
   m_Layer: 5
-  m_Name: Tot Carbs
+  m_Name: Carbs
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2805,7 +2805,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &894810070
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4468,7 +4468,7 @@ GameObject:
   - component: {fileID: 1288052527}
   - component: {fileID: 1288052526}
   m_Layer: 5
-  m_Name: Tot Fats
+  m_Name: Fats
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4717,7 +4717,7 @@ GameObject:
   - component: {fileID: 1382119860}
   - component: {fileID: 1382119859}
   m_Layer: 5
-  m_Name: Tot Protien
+  m_Name: Protien
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5326,7 +5326,7 @@ GameObject:
   - component: {fileID: 1485298537}
   - component: {fileID: 1485298536}
   m_Layer: 5
-  m_Name: Tot Calories
+  m_Name: Calories
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7349,7 +7349,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &2059508229
 RectTransform:
   m_ObjectHideFlags: 0

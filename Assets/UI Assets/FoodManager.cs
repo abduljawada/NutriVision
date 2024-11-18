@@ -1,11 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
+using UnityEditor;
+using UnityEngine;
 
 public class FoodManager
 {
     private FoodData selectedFood;
     private List<FoodData> foodList = new List<FoodData>();
+
+    public int ItemCount { get; private set; } = 0;
+
 
     public void SelectFood(FoodData foodData)
     {
@@ -28,6 +34,8 @@ public class FoodManager
         {
             foodList.Add(foodData);
         }
+
+        UpdateItemCount();
     }
 
     public void RemoveFood(string foodName)
@@ -47,6 +55,8 @@ public class FoodManager
                 foodToRemove.Fats -= foodToRemove.Fats/foodToRemove.Quantity;
                 foodToRemove.Quantity--;
             }
+
+            UpdateItemCount();
         }
     }
 
@@ -66,6 +76,23 @@ public class FoodManager
         }
 
         return (totalCalories, totalProtein, totalCarbs, totalFats);
+    }
+
+    public int getItemCount()
+    {
+        int totalCount = 0;
+
+        foreach(FoodData food in foodList)
+        {
+            totalCount += food.Quantity;
+        }
+        
+        return totalCount;
+    }
+
+    public void UpdateItemCount()
+    {
+        ItemCount = getItemCount();
     }
 
     public FoodData getSelected()

@@ -7,6 +7,13 @@ public class UIManager : MonoBehaviour
     public static UIManager Instance { get; private set; }
     [SerializeField] private string csvFileName = "fruits_nutrition.csv";
 
+    [Space]
+    [Header("UI Panels")]
+    [SerializeField] private GameObject basketPanel;
+    [SerializeField] private GameObject journalPanel;
+
+    [Space]
+    [Header("Detection UI")]
     // Change Text to TextMeshProUGUI
     [SerializeField] private TextMeshProUGUI foodNameText;
     [SerializeField] private TextMeshProUGUI caloriesText;
@@ -14,13 +21,17 @@ public class UIManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI carbsText;
     [SerializeField] private TextMeshProUGUI fatsText;
 
+    [Space]
+    [Header("Basket UI")]
     // UI elements for total nutritional info
     [SerializeField] private TextMeshProUGUI totalCaloriesText;
     [SerializeField] private TextMeshProUGUI totalProteinText;
     [SerializeField] private TextMeshProUGUI totalCarbsText;
     [SerializeField] private TextMeshProUGUI totalFatsText;
 
-    [SerializeField] private TextMeshProUGUI foodListText;
+    [SerializeField] private GameObject scrollViewContent;
+    
+    [SerializeField] private GameObject scrollViewElement;
 
     private CSVQuery csvQuery;
     private FoodManager foodManager;
@@ -46,7 +57,6 @@ public class UIManager : MonoBehaviour
 
     public void OnFoodSelected(string foodName)
     {
-        Debug.LogWarning("BAWAW");
         FoodData foodData = csvQuery.QueryFoodData(foodName);
         if (foodData != null)
         {
@@ -103,5 +113,16 @@ public class UIManager : MonoBehaviour
             Debug.LogError("AuthHandler instance not found.");
             // You could show a fallback UI or try to reload the scene if needed
         }
+    }
+
+    public void OnBasketButton()
+    {
+        Debug.Log("khara");
+        basketPanel.SetActive(!basketPanel.activeSelf);
+    }
+
+    public void OnAddButton()
+    {
+
     }
 }

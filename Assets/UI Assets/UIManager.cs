@@ -1,6 +1,9 @@
 using UnityEngine;
 using TMPro;
 using System.IO;
+using System.Collections.Generic;
+using System.Linq;
+using Unity.VisualScripting;
 
 public class UIManager : MonoBehaviour
 {
@@ -28,6 +31,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI totalProteinText;
     [SerializeField] private TextMeshProUGUI totalCarbsText;
     [SerializeField] private TextMeshProUGUI totalFatsText;
+    [SerializeField] private TextMeshProUGUI totalQuantText;
 
     [SerializeField] private GameObject scrollViewContent;
     
@@ -36,12 +40,13 @@ public class UIManager : MonoBehaviour
     private CSVQuery csvQuery;
     private FoodManager foodManager;
 
+    private Dictionary<string, GameObject> basketItems = new Dictionary<string, GameObject>();
+
     private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
         }
         else
         {
@@ -71,33 +76,55 @@ public class UIManager : MonoBehaviour
 
     public void AddSelectedFood()
     {
-        foodManager.AddFood(foodManager.getSelected());
-        foodListText.text += "\n> " + foodManager.getSelected().Name + "\n>" + foodManager.getSelected().Calories + "kCal";
-        UpdateTotalNutritionalValues();
-    } 
+        FoodData selectedFood = foodManager.getSelected();
 
-    private void DisplayFoodData(FoodData foodData)
-    {
-        foodNameText.text = foodData.Name;
-        caloriesText.text = $"Calories: {foodData.Calories} kCal";
-        proteinText.text = $"Protein: {foodData.Protein}g";
-        carbsText.text = $"Carbs: {foodData.Carbs}g";
-        fatsText.text = $"Fats: {foodData.Fats}g";
-    }
+        if(selectedFood != null)
+        {
+            foodManager.AddFood(selectedFood);
+            UpdateUI();
+        }
 
-    private void UpdateTotalNutritionalValues()
-    {
-        var totals = foodManager.GetTotalNutritionalValues();
-        totalCaloriesText.text = $"Total Calories: {totals.totalCalories} kCal";
-        totalProteinText.text = $"Total Protein: {totals.totalProtein}g";
-        totalCarbsText.text = $"Total Carbs: {totals.totalCarbs}g";
-        totalFatsText.text = $"Total Fats: {totals.totalFats}g";
+        //foodManager.AddFood(selectedFood);
+        //UpdateTotalNutritionalValues();
+        //AddItemToBasket(selectedFood);
     }
 
     public void RemoveFood(string foodName)
     {
         foodManager.RemoveFood(foodName);
-        UpdateTotalNutritionalValues(); // Update totals after removing
+        UpdateUI();
+    }
+
+    private void UpdateUI()
+    {
+        //Update total nutritional values
+        var totals = foodManager.GetTotals();
+        totalCaloriesText.text = $"{totals.totalCalories}\nkCal";
+        totalProteinText.text = $"{totals.totalProtein}g";
+        totalCarbsText.text = $"{totals.totalCarbs}g";
+        totalFatsText.text = $"{totals.totalFats}g";
+        totalQuantText.text = $"{totals.totalQuantity} Items";
+
+        //Update basket UI
+        foreach (var item in basketItems.Values)
+        {
+            Destroy(item);
+        }
+        basketItems.Clear();
+
+        foreach (var food in foodManager.GetFoodList())
+        {
+            AddItemToBasket(food);
+        }
+    }
+
+    private void DisplayFoodData(FoodData foodData)
+    {
+        foodNameText.text = foodData.Name;
+        caloriesText.text = $"{foodData.Calories}\nkCal";
+        proteinText.text = $"Protein: {foodData.Protein}g";
+        carbsText.text = $"Carbs: {foodData.Carbs}g";
+        fatsText.text = $"Fats: {foodData.Fats}g";
     }
 
     public void OnLogoutButtonPressed()
@@ -125,4 +152,20 @@ public class UIManager : MonoBehaviour
     {
 
     }
+
+    public void AddItemToBasket(FoodData foodData)
+    {
+        GameObject instance = Instantiate(scrollViewElement, scrollViewContent.transform);
+        ItemObjectScript script = instance.GetComponent<ItemObjectScript>();
+
+        if(script != null)
+        {
+            script.nameLabel.text = foodData.Name;
+            script.countLabel.text = $"{foodData.Quantity}x";
+            script.caloriesLabel.text = $"{foodData.Calories} kCal";
+        }
+
+        basketItems[foodData.Name] = instance;
+    }
+
 }

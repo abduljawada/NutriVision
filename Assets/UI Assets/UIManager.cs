@@ -10,6 +10,7 @@ public class UIManager : MonoBehaviour
 
     [Space]
     [Header("UI Panels")]
+    [SerializeField] private GameObject cameraPanel;
     [SerializeField] private GameObject basketPanel;
     [SerializeField] private GameObject journalPanel;
 
@@ -82,10 +83,6 @@ public class UIManager : MonoBehaviour
             foodManager.AddFood(selectedFood);
             UpdateUI();
         }
-
-        //foodManager.AddFood(selectedFood);
-        //UpdateTotalNutritionalValues();
-        //AddItemToBasket(selectedFood);
     }
 
     public void RemoveFood(string foodName)
@@ -125,17 +122,17 @@ public class UIManager : MonoBehaviour
         {
             foodNameText.text = foodData.Name;
             caloriesText.text = $"{foodData.Calories}\nkCal";
-            proteinText.text = $"Protein: {foodData.Protein}g";
-            carbsText.text = $"Carbs: {foodData.Carbs}g";
-            fatsText.text = $"Fats: {foodData.Fats}g";
+            proteinText.text = $"Protein\t{foodData.Protein}g";
+            carbsText.text = $"Carbs\t{foodData.Carbs}g";
+            fatsText.text = $"Fats\t\t{foodData.Fats}g";
         }
         else
         {
             foodnameArabicFixer.fixedText = foodData.Name;
-            caloriesText.GetComponent<ArabicFixerTMPRO>().fixedText = $"{foodData.Calories}\nكالوري";
-            proteinText.GetComponent<ArabicFixerTMPRO>().fixedText  = $"بروتينات {foodData.Protein}ج";
-            carbsText.GetComponent<ArabicFixerTMPRO>().fixedText = $"كربوهيدرات {foodData.Carbs}ج";
-            fatsText.GetComponent<ArabicFixerTMPRO>().fixedText = $"دهون {foodData.Fats}ج";
+            caloriesText.GetComponent<ArabicFixerTMPRO>().fixedText = $"{foodData.Calories}\nسعره";
+            proteinText.GetComponent<ArabicFixerTMPRO>().fixedText  = $"بروتينات \t{foodData.Protein}ج";
+            carbsText.GetComponent<ArabicFixerTMPRO>().fixedText = $"كربوهيدرات \t{foodData.Carbs}ج";
+            fatsText.GetComponent<ArabicFixerTMPRO>().fixedText = $"دهون \t{foodData.Fats}ج";
         }
     }
 
@@ -156,13 +153,13 @@ public class UIManager : MonoBehaviour
 
     public void OnBasketButton()
     {
-        Debug.Log("khara");
         basketPanel.SetActive(!basketPanel.activeSelf);
     }
 
-    public void OnAddButton()
+    public void OnAddJournalButtonClicked()
     {
-
+        SaveJournalEntryToFirebase();
+        ClearBasket();
     }
 
     public void AddItemToBasket(FoodData foodData)
@@ -178,6 +175,87 @@ public class UIManager : MonoBehaviour
         }
 
         basketItems[foodData.Name] = instance;
+    }
+
+    private void SaveJournalEntryToFirebase()
+    {
+        var totals = foodManager.GetTotals();
+        List<Dictionary<string,object>> foodList = new List<Dictionary<string, object>>();
+
+        foreach (var food in foodManager.GetFoodList())
+        {
+            foodList.Add(new Dictionary<string, object>
+            {
+                { "name", food.Name },
+                { "quantity", food.Quantity },
+                { "calories", food.Calories }
+            });
+        }
+
+        Dictionary<string, object> journalEntry = new Dictionary<string, object>
+        {
+            {"timestamp", System.DateTime.UtcNow.ToString("o")},
+            {"totalCalories", totals.totalCalories},
+            {"totalProtien", totals.totalProtein},
+            {"totalCarbs", totals.totalCarbs},
+            {"totalFats", totals.totalFats},
+            {"totalQuantity", totals.totalQuantity},
+            {"foodItems", foodList}
+        };
+
+        string userId = AuthHandler.Instance?.user?.UserId;
+        if (string.IsNullOrEmpty(userId))
+        {
+            Debug.LogError("User ID is null or empty! Ensure the user is authenticated.");
+            return;
+        }
+
+        FirebaseManager.Instance.SaveJournalEntry(journalEntry, userId);
+    }
+
+    public void ClearBasket()
+    {
+        foodManager.ClearFoodList();
+        UpdateUI();
+
+        foreach (Transform child in scrollViewContent.transform)
+        {
+            GameObject.Destroy(child.gameObject);
+        }
+        basketItems.Clear();
+    }
+
+    public void OnJournalNavButton()
+    {
+        if(!journalPanel.activeSelf)
+        {  
+            journalPanel.SetActive(true);
+            cameraPanel.SetActive(false);
+            basketPanel.SetActive(false);
+            toggleCameraIcon();
+        }
+        else
+        {
+            journalPanel.SetActive(false);
+            cameraPanel.SetActive(true);
+            toggleCameraIcon();
+        }
+
+        
+    }
+
+    private void toggleCameraIcon()
+    {
+        // Assume the icons are child objects under the cameraPanel
+        Transform icon1 = cameraPanel.transform.GetChild(0); // First child icon
+        Transform icon2 = cameraPanel.transform.GetChild(1); // Second child icon
+
+        // Toggle visibility between icon1 and icon2
+        bool isIcon1Active = icon1.gameObject.activeSelf;
+
+        // Set icon1 to inactive and icon2 to active (or vice versa)
+        icon1.gameObject.SetActive(!isIcon1Active); // If icon1 is active, deactivate it
+        icon2.gameObject.SetActive(isIcon1Active);  // If icon1 was active, activate icon2
     }
 
 }

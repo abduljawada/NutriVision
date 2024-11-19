@@ -1,7 +1,7 @@
 {
   "project_info": {
-    "firebase_url" : "null",
     "project_number": "483740037809",
+    "firebase_url": "https://nutrivision-46381-default-rtdb.europe-west1.firebasedatabase.app",
     "project_id": "nutrivision-46381",
     "storage_bucket": "nutrivision-46381.firebasestorage.app"
   },

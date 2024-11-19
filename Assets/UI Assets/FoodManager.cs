@@ -94,4 +94,9 @@ public class FoodManager
     {
         return foodList;
     }
+
+    public void ClearFoodList()
+    {
+        foodList.Clear();
+    }
 }

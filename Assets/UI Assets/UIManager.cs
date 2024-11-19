@@ -2,8 +2,6 @@ using UnityEngine;
 using TMPro;
 using System.IO;
 using System.Collections.Generic;
-using System.Linq;
-using Unity.VisualScripting;
 
 public class UIManager : MonoBehaviour
 {
@@ -62,7 +60,8 @@ public class UIManager : MonoBehaviour
 
     public void OnFoodSelected(string foodName)
     {
-        FoodData foodData = csvQuery.QueryFoodData(foodName);
+        string foodNameLower = foodName.ToLower().Trim();
+        FoodData foodData = csvQuery.QueryFoodData(foodNameLower);
         if (foodData != null)
         {
             foodManager.SelectFood(foodData);
@@ -71,6 +70,9 @@ public class UIManager : MonoBehaviour
         else
         {
             Debug.LogWarning(foodName + " is not found in CSV.");
+            FoodData testFoodData = new FoodData { Name = foodName, Calories = 6, Carbs = 1, Fats = 2, Protein = 3 };
+            foodManager.SelectFood(testFoodData);
+            DisplayFoodData(testFoodData);
         }
     }
 
@@ -127,20 +129,20 @@ public class UIManager : MonoBehaviour
         fatsText.text = $"Fats: {foodData.Fats}g";
     }
 
-    public void OnLogoutButtonPressed()
-    {
-        Debug.Log("Logout button pressed.");
-        if (AuthHandler.Instance != null)
-        {
-            Debug.Log("AuthHandler found.");
-            AuthHandler.Instance.Logout();  // Directly call the Logout method on the Singleton
-        }
-        else
-        {
-            Debug.LogError("AuthHandler instance not found.");
-            // You could show a fallback UI or try to reload the scene if needed
-        }
-    }
+    //public void OnLogoutButtonPressed()
+    //{
+    //    Debug.Log("Logout button pressed.");
+    //    if (AuthHandler.Instance != null)
+    //    {
+    //        Debug.Log("AuthHandler found.");
+    //        AuthHandler.Instance.Logout();  // Directly call the Logout method on the Singleton
+    //    }
+    //    else
+    //    {
+    //        Debug.LogError("AuthHandler instance not found.");
+    //        // You could show a fallback UI or try to reload the scene if needed
+    //    }
+    //}
 
     public void OnBasketButton()
     {

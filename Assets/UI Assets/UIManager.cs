@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using TMPro;
 using System.IO;
 using System.Collections.Generic;
@@ -50,6 +50,7 @@ public class UIManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
+        Debug.Log(Instance.gameObject.name);
     }
 
     private void Start()
@@ -58,10 +59,9 @@ public class UIManager : MonoBehaviour
         foodManager = new FoodManager();
     }
 
-    public void OnFoodSelected(string foodName)
+    public void OnFoodSelected(int foodIndex)
     {
-        string foodNameLower = foodName.ToLower().Trim();
-        FoodData foodData = csvQuery.QueryFoodData(foodNameLower);
+        FoodData foodData = csvQuery.QueryFoodData(foodIndex);
         if (foodData != null)
         {
             foodManager.SelectFood(foodData);
@@ -69,10 +69,7 @@ public class UIManager : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning(foodName + " is not found in CSV.");
-            FoodData testFoodData = new FoodData { Name = foodName, Calories = 6, Carbs = 1, Fats = 2, Protein = 3 };
-            foodManager.SelectFood(testFoodData);
-            DisplayFoodData(testFoodData);
+            Debug.LogWarning(foodIndex + " is not found in CSV.");
         }
     }
 
@@ -122,11 +119,24 @@ public class UIManager : MonoBehaviour
 
     private void DisplayFoodData(FoodData foodData)
     {
-        foodNameText.text = foodData.Name;
-        caloriesText.text = $"{foodData.Calories}\nkCal";
-        proteinText.text = $"Protein: {foodData.Protein}g";
-        carbsText.text = $"Carbs: {foodData.Carbs}g";
-        fatsText.text = $"Fats: {foodData.Fats}g";
+        var foodnameArabicFixer =  foodNameText.GetComponent<ArabicFixerTMPRO>();
+
+        if (foodnameArabicFixer == null)
+        {
+            foodNameText.text = foodData.Name;
+            caloriesText.text = $"{foodData.Calories}\nkCal";
+            proteinText.text = $"Protein: {foodData.Protein}g";
+            carbsText.text = $"Carbs: {foodData.Carbs}g";
+            fatsText.text = $"Fats: {foodData.Fats}g";
+        }
+        else
+        {
+            foodnameArabicFixer.fixedText = foodData.Name;
+            caloriesText.GetComponent<ArabicFixerTMPRO>().fixedText = $"{foodData.Calories}\nكالوري";
+            proteinText.GetComponent<ArabicFixerTMPRO>().fixedText  = $"بروتينات {foodData.Protein}ج";
+            carbsText.GetComponent<ArabicFixerTMPRO>().fixedText = $"كربوهيدرات {foodData.Carbs}ج";
+            fatsText.GetComponent<ArabicFixerTMPRO>().fixedText = $"دهون {foodData.Fats}ج";
+        }
     }
 
     //public void OnLogoutButtonPressed()

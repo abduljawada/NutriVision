@@ -8,7 +8,6 @@ using UnityEngine.UI;
 public class RunModel : MonoBehaviour
 {
     [SerializeField] private ModelAsset modelAsset;
-    [SerializeField] private TextAsset labelsAsset;
     [SerializeField] private RawImage displayImage;
     [SerializeField] private CameraUpdate cam;
     [SerializeField] private GameObject objectBox;
@@ -16,7 +15,6 @@ public class RunModel : MonoBehaviour
 
     private Transform displayLocation;
     private Worker worker;
-    private string[] labels;
     private RenderTexture targetRT;
 
     private const int imageWidth = 640;
@@ -26,7 +24,6 @@ public class RunModel : MonoBehaviour
 
     [SerializeField, Range(0, 1)] float iouThreshold = 0.5f;
     [SerializeField, Range(0, 1)] float scoreThreshold = 0.5f;
-    [SerializeField] private int maxDetectionsInFrame = 10;
 
     private float lastDetectionTime;
 
@@ -58,8 +55,6 @@ public class RunModel : MonoBehaviour
 
     void Start()
     {
-        //Parse neural net labels
-        labels = labelsAsset.text.Split('\n');
 
         LoadModel();
 
@@ -140,21 +135,19 @@ public class RunModel : MonoBehaviour
 
         ClearAnnotations();
 
-        //Draw the bounding boxes
-        for (int n = 0; n < Mathf.Min(boxesFound, maxDetectionsInFrame); n++)
+        if (boxesFound > 0)
         {
-            string label = labels[cpuLabelIDs[n]];
             var box = new BoundingBox
             {
-                centerX = cpuOutput[n, 0] * scaleX - displayWidth / 2,
-                centerY = cpuOutput[n, 1] * scaleY - displayHeight / 2,
-                width = cpuOutput[n, 2] * scaleX,
-                height = cpuOutput[n, 3] * scaleY,
-                label = label,
+                centerX = cpuOutput[0, 0] * scaleX - displayWidth / 2,
+                centerY = cpuOutput[0, 1] * scaleY - displayHeight / 2,
+                width = cpuOutput[0, 2] * scaleX,
+                height = cpuOutput[0, 3] * scaleY,
+                //label = labels[cpuLabelIDs[0]],
             };
 
-            UIManager.Instance.OnFoodSelected(label);
-            DrawBox(box, n);
+            UIManager.Instance.OnFoodSelected(cpuLabelIDs[0]);
+            DrawBox(box, 0);
         }
 
         m_Started = false;

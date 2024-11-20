@@ -33,11 +33,17 @@ public class UIManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI totalQuantText;
 
     [SerializeField] private GameObject scrollViewContent;
+
+    [Space]
+    [Header("Basket ScrollView")]
     
-    [SerializeField] private GameObject scrollViewElement;
+    public GameObject scrollViewElement;
 
     private CSVQuery csvQuery;
-    private FoodManager foodManager;
+    public FoodManager foodManager;
+
+    private BasketManager basketManager;
+    private PanelManager panelManager;
 
     private Dictionary<string, GameObject> basketItems = new Dictionary<string, GameObject>();
 
@@ -51,13 +57,14 @@ public class UIManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
-        Debug.Log(Instance.gameObject.name);
     }
 
     private void Start()
     {
         csvQuery = new CSVQuery(Path.Combine(Application.streamingAssetsPath, csvFileName));
         foodManager = new FoodManager();
+        basketManager = new BasketManager(scrollViewContent.transform, scrollViewElement);
+        panelManager = new PanelManager(cameraPanel, basketPanel, journalPanel);
     }
 
     public void OnFoodSelected(int foodIndex)
@@ -71,46 +78,6 @@ public class UIManager : MonoBehaviour
         else
         {
             Debug.LogWarning(foodIndex + " is not found in CSV.");
-        }
-    }
-
-    public void AddSelectedFood()
-    {
-        FoodData selectedFood = foodManager.getSelected();
-
-        if(selectedFood != null)
-        {
-            foodManager.AddFood(selectedFood);
-            UpdateUI();
-        }
-    }
-
-    public void RemoveFood(string foodName)
-    {
-        foodManager.RemoveFood(foodName);
-        UpdateUI();
-    }
-
-    private void UpdateUI()
-    {
-        //Update total nutritional values
-        var totals = foodManager.GetTotals();
-        totalCaloriesText.text = $"{totals.totalCalories}\nkCal";
-        totalProteinText.text = $"{totals.totalProtein}g";
-        totalCarbsText.text = $"{totals.totalCarbs}g";
-        totalFatsText.text = $"{totals.totalFats}g";
-        totalQuantText.text = $"{totals.totalQuantity} Items";
-
-        //Update basket UI
-        foreach (var item in basketItems.Values)
-        {
-            Destroy(item);
-        }
-        basketItems.Clear();
-
-        foreach (var food in foodManager.GetFoodList())
-        {
-            AddItemToBasket(food);
         }
     }
 
@@ -136,48 +103,45 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    //public void OnLogoutButtonPressed()
-    //{
-    //    Debug.Log("Logout button pressed.");
-    //    if (AuthHandler.Instance != null)
-    //    {
-    //        Debug.Log("AuthHandler found.");
-    //        AuthHandler.Instance.Logout();  // Directly call the Logout method on the Singleton
-    //    }
-    //    else
-    //    {
-    //        Debug.LogError("AuthHandler instance not found.");
-    //        // You could show a fallback UI or try to reload the scene if needed
-    //    }
-    //}
-
-    public void OnBasketButton()
+    public void AddSelectedFood()
     {
-        basketPanel.SetActive(!basketPanel.activeSelf);
+        FoodData selectedFood = foodManager.getSelected();
+
+        if(selectedFood != null)
+        {
+            foodManager.AddFood(selectedFood);
+            basketManager.UpdateBasket();
+            UpdateTotalUI();
+        }
+    }
+
+    public void RemoveFood(string foodName) 
+    {
+        foodManager.RemoveFood(foodName);
+        //basketManager.RemoveItem(foodName); //Not Implemented
+        UpdateTotalUI();
     }
 
     public void OnAddJournalButtonClicked()
     {
-        SaveJournalEntryToFirebase();
-        ClearBasket();
+        SaveEntryToFirebase();
+        foodManager.ClearFoodList();
+        basketManager.Clear();
+        UpdateTotalUI();
     }
 
-    public void AddItemToBasket(FoodData foodData)
+    private void UpdateTotalUI()
     {
-        GameObject instance = Instantiate(scrollViewElement, scrollViewContent.transform);
-        ItemObjectScript script = instance.GetComponent<ItemObjectScript>();
-
-        if(script != null)
-        {
-            script.nameLabel.text = foodData.Name;
-            script.countLabel.text = $"{foodData.Quantity}x";
-            script.caloriesLabel.text = $"{foodData.Calories} kCal";
-        }
-
-        basketItems[foodData.Name] = instance;
+        //Update total nutritional values
+        var totals = foodManager.GetTotals();
+        totalCaloriesText.text = $"{totals.totalCalories}\nkCal";
+        totalProteinText.text = $"{totals.totalProtein}g";
+        totalCarbsText.text = $"{totals.totalCarbs}g";
+        totalFatsText.text = $"{totals.totalFats}g";
+        totalQuantText.text = $"{totals.totalQuantity} Items";
     }
 
-    private void SaveJournalEntryToFirebase()
+    private void SaveEntryToFirebase()
     {
         var totals = foodManager.GetTotals();
         List<Dictionary<string,object>> foodList = new List<Dictionary<string, object>>();
@@ -203,59 +167,11 @@ public class UIManager : MonoBehaviour
             {"foodItems", foodList}
         };
 
-        string userId = AuthHandler.Instance?.user?.UserId;
-        if (string.IsNullOrEmpty(userId))
-        {
-            Debug.LogError("User ID is null or empty! Ensure the user is authenticated.");
-            return;
-        }
-
-        FirebaseManager.Instance.SaveJournalEntry(journalEntry, userId);
+        FirebaseManager.Instance.SaveJournalEntry(journalEntry);
     }
 
-    public void ClearBasket()
-    {
-        foodManager.ClearFoodList();
-        UpdateUI();
-
-        foreach (Transform child in scrollViewContent.transform)
-        {
-            GameObject.Destroy(child.gameObject);
-        }
-        basketItems.Clear();
-    }
-
-    public void OnJournalNavButton()
-    {
-        if(!journalPanel.activeSelf)
-        {  
-            journalPanel.SetActive(true);
-            cameraPanel.SetActive(false);
-            basketPanel.SetActive(false);
-            toggleCameraIcon();
-        }
-        else
-        {
-            journalPanel.SetActive(false);
-            cameraPanel.SetActive(true);
-            toggleCameraIcon();
-        }
-
-        
-    }
-
-    private void toggleCameraIcon()
-    {
-        // Assume the icons are child objects under the cameraPanel
-        Transform icon1 = cameraPanel.transform.GetChild(0); // First child icon
-        Transform icon2 = cameraPanel.transform.GetChild(1); // Second child icon
-
-        // Toggle visibility between icon1 and icon2
-        bool isIcon1Active = icon1.gameObject.activeSelf;
-
-        // Set icon1 to inactive and icon2 to active (or vice versa)
-        icon1.gameObject.SetActive(!isIcon1Active); // If icon1 is active, deactivate it
-        icon2.gameObject.SetActive(isIcon1Active);  // If icon1 was active, activate icon2
-    }
+    public void OnBasketNavButton() => panelManager.ToggleBasketPanel();
+    public void OnJournalNavButton() => panelManager.ToggleJournalPanel();
+    public void OnProfileNavButton() => FirebaseManager.Instance.LogOut();
 
 }

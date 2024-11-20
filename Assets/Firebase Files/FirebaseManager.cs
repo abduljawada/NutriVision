@@ -3,6 +3,7 @@ using UnityEngine;
 using Firebase;
 using Firebase.Database;
 using Firebase.Extensions;
+using UnityEngine.SceneManagement;
 
 public class FirebaseManager : MonoBehaviour
 {
@@ -38,8 +39,15 @@ public class FirebaseManager : MonoBehaviour
         });
     }
 
-    public void SaveJournalEntry(Dictionary<string, object> journalEntry, string userId)
+    public void SaveJournalEntry(Dictionary<string, object> journalEntry)
     {
+        string userId = AuthHandler.Instance?.user?.UserId;
+        if (string.IsNullOrEmpty(userId))
+        {
+            Debug.LogError("User ID is null or empty! Ensure the user is authenticated.");
+            return;
+        }
+
         string key = dbReference.Child("users").Child(userId).Child("journalEntries").Push().Key;
         dbReference.Child("users").Child(userId).Child("journalEntries").Child(key).SetValueAsync(journalEntry).ContinueWithOnMainThread(task =>
         {
@@ -53,4 +61,21 @@ public class FirebaseManager : MonoBehaviour
             }
         });
     }
+
+    public void LogOut()
+    {
+        Debug.Log("Logout button pressed.");
+        if (AuthHandler.Instance != null)
+        {
+            Debug.Log("AuthHandler found.");
+            AuthHandler.Instance.Logout();  // Directly call the Logout method on the Singleton
+        }
+        else
+        {
+            Debug.LogError("AuthHandler instance not found.");
+            SceneManager.LoadScene("Authentication");
+            // You could show a fallback UI or try to reload the scene if needed
+        }
+    }
+        
 }

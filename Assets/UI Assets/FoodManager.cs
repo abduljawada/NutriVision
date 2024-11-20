@@ -29,6 +29,7 @@ public class FoodManager
             existingFood.Carbs += foodData.Carbs;
             existingFood.Fats += foodData.Fats;
             existingFood.Quantity += foodData.Quantity;
+            Debug.Log($"FoodManager updated {foodData.Name}: Quantity = {existingFood.Quantity}");
         }
         else
         {
@@ -42,6 +43,7 @@ public class FoodManager
                 Fats = foodData.Fats,
                 Quantity = foodData.Quantity
             });
+            Debug.Log($"FoodManager added {foodData.Name}: Quantity = {foodData.Quantity}");
         }
     }
 

@@ -137,17 +137,17 @@ public class RunModel : MonoBehaviour
 
         if (boxesFound > 0)
         {
-            var box = new BoundingBox
-            {
-                centerX = cpuOutput[0, 0] * scaleX - displayWidth / 2,
-                centerY = cpuOutput[0, 1] * scaleY - displayHeight / 2,
-                width = cpuOutput[0, 2] * scaleX,
-                height = cpuOutput[0, 3] * scaleY,
+            //var box = new BoundingBox
+            //{
+                //centerX = cpuOutput[0, 0] * scaleX - displayWidth / 2,
+                //centerY = cpuOutput[0, 1] * scaleY - displayHeight / 2,
+                //width = cpuOutput[0, 2] * scaleX,
+                //height = cpuOutput[0, 3] * scaleY,
                 //label = labels[cpuLabelIDs[0]],
-            };
+            //};
 
             UIManager.Instance.OnFoodSelected(cpuLabelIDs[0]);
-            DrawBox(box, 0);
+            //DrawBox(box, 0);
         }
 
         m_Started = false;

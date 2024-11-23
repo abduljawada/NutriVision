@@ -10,9 +10,10 @@ public class UIManager : MonoBehaviour
 
     [Space]
     [Header("UI Panels")]
-    [SerializeField] private GameObject cameraPanel;
     [SerializeField] private GameObject basketPanel;
     [SerializeField] private GameObject journalPanel;
+    [SerializeField] private GameObject cameraLabel;
+    [SerializeField] private GameObject journalLabel;
 
     [Space]
     [Header("Detection UI")]
@@ -32,17 +33,20 @@ public class UIManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI totalFatsText;
     [SerializeField] private TextMeshProUGUI totalQuantText;
 
-    [SerializeField] private GameObject scrollViewContent;
-
     [Space]
     [Header("Basket ScrollView")]
-    
-    public GameObject scrollViewElement;
+    [SerializeField] private GameObject basketViewContent;
+    public GameObject itemPrefab;
+
+    [Space]
+    [Header("Journal ScrollView")]
+    [SerializeField] private GameObject journalViewContent;
+    public GameObject entryPrefab;
 
     private CSVQuery csvQuery;
     public FoodManager foodManager;
-
     private BasketManager basketManager;
+    private JournalManager journalManager;
     private PanelManager panelManager;
 
     private Dictionary<string, GameObject> basketItems = new Dictionary<string, GameObject>();
@@ -63,8 +67,9 @@ public class UIManager : MonoBehaviour
     {
         csvQuery = new CSVQuery(Path.Combine(Application.streamingAssetsPath, csvFileName));
         foodManager = new FoodManager();
-        basketManager = new BasketManager(scrollViewContent.transform, scrollViewElement);
-        panelManager = new PanelManager(cameraPanel, basketPanel, journalPanel);
+        basketManager = new BasketManager(basketViewContent.transform, itemPrefab);
+        journalManager = new JournalManager(journalViewContent.transform, itemPrefab, entryPrefab);
+        panelManager = new PanelManager(basketPanel, journalPanel, cameraLabel, journalLabel);
     }
 
     public void OnFoodSelected(int foodIndex)
@@ -118,7 +123,7 @@ public class UIManager : MonoBehaviour
     public void RemoveFood(string foodName) 
     {
         foodManager.RemoveFood(foodName);
-        //basketManager.RemoveItem(foodName); //Not Implemented
+        basketManager.UpdateBasket();
         UpdateTotalUI();
     }
 
@@ -143,35 +148,57 @@ public class UIManager : MonoBehaviour
 
     private void SaveEntryToFirebase()
     {
-        var totals = foodManager.GetTotals();
-        List<Dictionary<string,object>> foodList = new List<Dictionary<string, object>>();
+        // Step 1: Gather totals from foodManager
+        var totals = foodManager.GetTotals(); // Ensure foodManager.GetTotals() returns an object with the required properties
 
-        foreach (var food in foodManager.GetFoodList())
+        // Step 2: Gather food items from foodManager
+        Dictionary<string, FoodItem> foodItemsMap = new Dictionary<string, FoodItem>();
+        int counter = 1;
+        foreach (var food in foodManager.GetFoodList()) // Ensure GetFoodList() returns a list of food items
         {
-            foodList.Add(new Dictionary<string, object>
+            foodItemsMap[$"food{counter}"] = new FoodItem
             {
-                { "name", food.Name },
-                { "quantity", food.Quantity },
-                { "calories", food.Calories }
-            });
+                name = food.Name,
+                quantity = food.Quantity,
+                calories = food.Calories
+            };
+            counter++;
+            Debug.Log($"UIManager added {food.Quantity} {food.Name} with {food.Calories} kCal");
         }
+        Debug.Log($"foodItemsMap prepared: {JsonUtility.ToJson(foodItemsMap)}");
 
-        Dictionary<string, object> journalEntry = new Dictionary<string, object>
+        // Step 3: Create a JournalEntry object
+        JournalEntry journalEntry = new JournalEntry
         {
-            {"timestamp", System.DateTime.UtcNow.ToString("o")},
-            {"totalCalories", totals.totalCalories},
-            {"totalProtien", totals.totalProtein},
-            {"totalCarbs", totals.totalCarbs},
-            {"totalFats", totals.totalFats},
-            {"totalQuantity", totals.totalQuantity},
-            {"foodItems", foodList}
+            timestamp = System.DateTime.UtcNow.ToString("o"), // ISO 8601 format for timestamp
+            totalCalories = totals.totalCalories,
+            totalProtien = totals.totalProtein,
+            totalCarbs = totals.totalCarbs,
+            totalFats = totals.totalFats,
+            totalQuantity = (int)totals.totalQuantity,
+            foodItems = foodItemsMap
         };
+        Debug.Log($"JournalEntry prepared: {JsonUtility.ToJson(journalEntry)}");
 
+        // Step 4: Save the JournalEntry to Firebase
         FirebaseManager.Instance.SaveJournalEntry(journalEntry);
+
+        // Log success for debugging
+        Debug.Log("Journal entry prepared and sent to Firebase.");
     }
 
+    public void OnCameraNavButton()
+    {
+        panelManager.ShowCameraPanel();
+    }
+
+    public void OnJournalNavButton()
+    {
+        panelManager.ToggleJournalPanel();
+        journalManager.FetchJournalEntries();
+    }
     public void OnBasketNavButton() => panelManager.ToggleBasketPanel();
-    public void OnJournalNavButton() => panelManager.ToggleJournalPanel();
     public void OnProfileNavButton() => FirebaseManager.Instance.LogOut();
+    
 
 }

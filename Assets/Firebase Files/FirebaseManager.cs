@@ -1,9 +1,12 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Firebase;
 using Firebase.Database;
 using Firebase.Extensions;
 using UnityEngine.SceneManagement;
+using Newtonsoft.Json;
+
 
 public class FirebaseManager : MonoBehaviour
 {
@@ -39,7 +42,7 @@ public class FirebaseManager : MonoBehaviour
         });
     }
 
-    public void SaveJournalEntry(Dictionary<string, object> journalEntry)
+    public void SaveJournalEntry(JournalEntry entry)
     {
         string userId = AuthHandler.Instance?.user?.UserId;
         if (string.IsNullOrEmpty(userId))
@@ -49,7 +52,11 @@ public class FirebaseManager : MonoBehaviour
         }
 
         string key = dbReference.Child("users").Child(userId).Child("journalEntries").Push().Key;
-        dbReference.Child("users").Child(userId).Child("journalEntries").Child(key).SetValueAsync(journalEntry).ContinueWithOnMainThread(task =>
+        string json = JsonConvert.SerializeObject(entry); // Use Newtonsoft.Json for serialization
+
+        Debug.Log($"Serialized JournalEntry with Newtonsoft.Json: {json}");
+
+        dbReference.Child("users").Child(userId).Child("journalEntries").Child(key).SetRawJsonValueAsync(json).ContinueWithOnMainThread(task =>
         {
             if (task.IsCompleted)
             {
@@ -61,6 +68,62 @@ public class FirebaseManager : MonoBehaviour
             }
         });
     }
+
+    public void GetAllJournalEntries(Action<List<JournalEntry>> onSuccess, Action<string> onFailure)
+    {
+        string userId = AuthHandler.Instance?.user?.UserId;
+        if (string.IsNullOrEmpty(userId))
+        {
+            Debug.LogError("User ID is null or empty! Ensure the user is authenticated.");
+            onFailure?.Invoke("User not authenticated.");
+            return;
+        }
+
+        dbReference.Child("users").Child(userId).Child("journalEntries").GetValueAsync().ContinueWithOnMainThread(task =>
+        {
+            if (task.IsCompleted)
+            {
+                if (task.Result.Exists)
+                {
+                    List<JournalEntry> entries = new List<JournalEntry>();
+
+                    foreach (var childSnapshot in task.Result.Children)
+                    {
+                        // Get raw JSON value for the entry
+                        string json = childSnapshot.GetRawJsonValue();
+                        Debug.Log($"Raw JSON from Firebase: {json}");
+
+                        // Deserialize the entry
+                        JournalEntry entry = JsonConvert.DeserializeObject<JournalEntry>(json);
+                        
+                        if (entry.foodItems != null)
+                        {
+                            Debug.Log($"Deserialized {entry.foodItems.Count} food items for entry.");
+                        }
+                        else
+                        {
+                            Debug.LogWarning("foodItems field is null after deserialization.");
+                        }
+
+                        entries.Add(entry);
+                    }
+
+                    onSuccess?.Invoke(entries);
+                }
+                else
+                {
+                    Debug.LogWarning("No journal entries found.");
+                    onSuccess?.Invoke(new List<JournalEntry>());
+                }
+            }
+            else
+            {
+                Debug.LogError($"Failed to retrieve journal entries: {task.Exception}");
+                onFailure?.Invoke(task.Exception?.ToString());
+            }
+        });
+    }
+
 
     public void LogOut()
     {

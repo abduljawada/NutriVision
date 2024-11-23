@@ -300,4 +300,9 @@ public class AuthHandler : MonoBehaviour
             }
         }
     }
+
+    internal string GetUserId()
+    {
+        throw new NotImplementedException();
+    }
 }

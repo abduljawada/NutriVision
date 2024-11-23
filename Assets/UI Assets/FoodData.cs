@@ -1,6 +1,6 @@
-using UnityEngine;
+using System;
 
-[System.Serializable]
+[Serializable]
 public class FoodData
 {
     public string Name;
@@ -11,3 +11,4 @@ public class FoodData
 
     public int Quantity = 1;
 }
+

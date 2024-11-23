@@ -3,38 +3,42 @@ using UnityEngine;
 
 public class PanelManager
 {
-    private GameObject cameraPanel;
+    private GameObject cameraPanel, cameraLabel;
     private GameObject basketPanel;
-    private GameObject journalPanel;
+    private GameObject journalPanel, journalLabel;
 
-    public PanelManager(GameObject cameraPanel, GameObject basketPanel, GameObject journalPanel)
+    public PanelManager(GameObject basketPanel, GameObject journalPanel, GameObject cameraLabel, GameObject journalLabel)
     {
-        this.cameraPanel = cameraPanel;
         this.basketPanel = basketPanel;
         this.journalPanel = journalPanel;
+        this.cameraLabel = cameraLabel;
+        this.journalLabel = journalLabel;
     }
 
     public void ToggleBasketPanel()
-    {
-        basketPanel.SetActive(!basketPanel.activeSelf);
+    {   
+        bool isBasketActive = basketPanel.activeSelf; // Correct this
+        basketPanel.SetActive(!isBasketActive);
+        journalPanel.SetActive(false);
+        journalLabel.SetActive(false);
+        cameraLabel.SetActive(true);
     }
 
     public void ToggleJournalPanel()
     {
         bool isJournalActive = journalPanel.activeSelf;
         journalPanel.SetActive(!isJournalActive);
-        cameraPanel.SetActive(isJournalActive);
-        Debug.Log("Journal Button Pressed!");
+        journalLabel.SetActive(!isJournalActive);
+        basketPanel.SetActive(isJournalActive);
+        cameraLabel.SetActive(isJournalActive);
     }
 
-    public void ToggleCameraIcon()
+    public void ShowCameraPanel()
     {
-        Transform icon1 = cameraPanel.transform.GetChild(0);
-        Transform icon2 = cameraPanel.transform.GetChild(1);
-
-        bool isIcon1Active = icon1.gameObject.activeSelf;
-        icon1.gameObject.SetActive(!isIcon1Active);
-        icon2.gameObject.SetActive(isIcon1Active);
+        journalPanel.SetActive(false);
+        journalLabel.SetActive(false);
+        basketPanel.SetActive(false);
+        cameraLabel.SetActive(true);
     }
         
 }

@@ -6,12 +6,12 @@ public class BasketManager
  {
     private Dictionary<string, GameObject> basketItems = new Dictionary<string, GameObject>();
     private Transform scrollViewContent;
-    private GameObject scrollViewElement;
+    private GameObject itemPrefab;
 
-    public BasketManager(Transform scrollViewContent, GameObject scrollViewElement)
+    public BasketManager(Transform scrollViewContent, GameObject itemPrefab)
     {
         this.scrollViewContent = scrollViewContent;
-        this.scrollViewElement = scrollViewElement;
+        this.itemPrefab = itemPrefab;
 
     }
 
@@ -26,14 +26,14 @@ public class BasketManager
         // Step 2: Re-add all items from the foodManager's foodList to the basket
         foreach (var foodData in foodList)
         {
-            AddItem(foodData, scrollViewElement);
+            AddItem(foodData, itemPrefab);
         }
     }
 
     // Function to add a food item to the basket UI
-    private void AddItem(FoodData foodData, GameObject scrollViewElement)
+    private void AddItem(FoodData foodData, GameObject itemPrefab)
     {
-        GameObject newItem = UnityEngine.Object.Instantiate(scrollViewElement, scrollViewContent);
+        GameObject newItem = UnityEngine.Object.Instantiate(itemPrefab, scrollViewContent);
         newItem.name = foodData.Name;
 
         // Get the ItemObjectScript on the new item and update labels

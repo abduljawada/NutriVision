@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@string/firebase_database_url,@string/gcm_defaultSenderId,@string/google_storage_bucket,@string/project_id,@string/google_api_key,@string/google_crash_reporting_api_key,@string/google_app_id">
+  <string name="firebase_database_url" translatable="false">https://nutrivision-46381-default-rtdb.europe-west1.firebasedatabase.app</string>
+  <string name="gcm_defaultSenderId" translatable="false">483740037809</string>
+  <string name="google_storage_bucket" translatable="false">nutrivision-46381.firebasestorage.app</string>
+  <string name="project_id" translatable="false">nutrivision-46381</string>
+  <string name="google_api_key" translatable="false">AIzaSyC1l2EWLU4bQC5ZstMTJPaIbdiN_ND9e_g</string>
+  <string name="google_crash_reporting_api_key" translatable="false">AIzaSyC1l2EWLU4bQC5ZstMTJPaIbdiN_ND9e_g</string>
+  <string name="google_app_id" translatable="false">1:483740037809:android:6f19fc49f76636b5732890</string>
+</resources>

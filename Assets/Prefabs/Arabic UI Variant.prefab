@@ -3193,6 +3193,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   csvFileName: ar_nutriments.csv
+  cameraPanel: {fileID: 0}
   basketPanel: {fileID: 7366298382870051378}
   journalPanel: {fileID: 0}
   foodNameText: {fileID: 834773734488760517}

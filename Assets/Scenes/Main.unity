@@ -537,7 +537,6 @@ GameObject:
   - component: {fileID: 84440378}
   - component: {fileID: 84440377}
   - component: {fileID: 84440376}
-  - component: {fileID: 84440375}
   m_Layer: 5
   m_Name: Food Scroll View
   m_TagString: Untagged
@@ -565,18 +564,6 @@ RectTransform:
   m_AnchoredPosition: {x: 168.8958, y: -237.50002}
   m_SizeDelta: {x: 247.32184, y: 300}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &84440375
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 84440373}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &84440376
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3138,7 +3125,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &772058119
 Transform:
   m_ObjectHideFlags: 0
@@ -3169,7 +3156,7 @@ MonoBehaviour:
   modelAsset: {fileID: 5022602860645237092, guid: 8f00f03e98412f9469c0b92fe02cf5a3, type: 3}
   displayImage: {fileID: 894810071}
   cam: {fileID: 2076086295}
-  objectBox: {fileID: 9070006779960704585, guid: b4ed05fb342576c4ca67888bec9dae56, type: 3}
+  objectBox: {fileID: 9070006779960704585, guid: e803d7f6beb5c9e4bac77ad2679acb6a, type: 3}
   iouThreshold: 0.5
   scoreThreshold: 0.75
 --- !u!1 &845538751
@@ -4288,7 +4275,7 @@ Transform:
   m_GameObject: {fileID: 1248613247}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.02870124, y: 0.08907041, z: 0.04504037}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -11384,18 +11371,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2188318220221235976}
   m_CullTransparentMesh: 1
---- !u!114 &6060345649040177211
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6217210707266710304}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &6112881857566539831
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11476,7 +11451,6 @@ GameObject:
   - component: {fileID: 950886146922416155}
   - component: {fileID: 4687341765209012719}
   - component: {fileID: 81100372098557152}
-  - component: {fileID: 6060345649040177211}
   m_Layer: 5
   m_Name: Food Scroll View
   m_TagString: Untagged

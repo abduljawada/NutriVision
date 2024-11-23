@@ -53,29 +53,29 @@ public class CameraUpdate : MonoBehaviour
             {
                 string devicename = devices[0].name;
 
-                Resolution[] resolutions = devices[0].availableResolutions;
-                if (resolutions != null)
-                {
-                    int best = 0;
-                    for (int j = 0; j < resolutions.Length; j++)
-                    {
-                        Debug.Log("Resoltions for Camera " + $" Width: {resolutions[j].width}, Height: {resolutions[j].height}, Refresh Rate: {resolutions[j].refreshRateRatio}");
-                        if (resolutions[j].width < resolutions[best].width && resolutions[j].width <= 640)
-                        {
-                            best = j;
-                        }
-                    }
-                    webcamTexture = new WebCamTexture(devicename, resolutions[best].width, resolutions[best].height);
-                    Debug.Log(resolutions[best].width + "x" + resolutions[best].height);
-                    rawImage.GetComponent<RectTransform>().sizeDelta = new Vector2(320, resolutions[best].height * 320 / resolutions[best].width);  
-                }
-                else
-                {
+                //Resolution[] resolutions = devices[0].availableResolutions;
+                //if (resolutions != null)
+                //{
+                    //int best = 0;
+                    //for (int j = 0; j < resolutions.Length; j++)
+                    //{
+                        //Debug.Log("Resoltions for Camera " + $" Width: {resolutions[j].width}, Height: {resolutions[j].height}, Refresh Rate: {resolutions[j].refreshRateRatio}");
+                        //if (resolutions[j].width < resolutions[best].width && resolutions[j].width <= 640)
+                        //{
+                            //best = j;
+                        //}
+                    //}
+                    //webcamTexture = new WebCamTexture(devicename, resolutions[best].width, resolutions[best].height);
+                    //Debug.Log(resolutions[best].width + "x" + resolutions[best].height);
+                    //rawImage.GetComponent<RectTransform>().sizeDelta = new Vector2(320, resolutions[best].height * 320 / resolutions[best].width);  
+                //}
+                //else
+                //{
                     webcamTexture = new WebCamTexture(devicename, 720, 1080, 30)
                     {
                         wrapMode = TextureWrapMode.Mirror
                     };
-                }
+                //}
 
 
 

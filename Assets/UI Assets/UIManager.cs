@@ -96,10 +96,10 @@ public class UIManager : MonoBehaviour
         else
         {
             foodnameArabicFixer.fixedText = foodData.Name;
-            caloriesText.GetComponent<ArabicFixerTMPRO>().fixedText = $"{foodData.Calories}\nسعره";
-            proteinText.GetComponent<ArabicFixerTMPRO>().fixedText  = $"بروتينات \t{foodData.Protein}ج";
-            carbsText.GetComponent<ArabicFixerTMPRO>().fixedText = $"كربوهيدرات \t{foodData.Carbs}ج";
-            fatsText.GetComponent<ArabicFixerTMPRO>().fixedText = $"دهون \t{foodData.Fats}ج";
+            caloriesText.GetComponent<ArabicFixerTMPRO>().fixedText = $"{foodData.Calories}\nسعرة";
+            proteinText.GetComponent<ArabicFixerTMPRO>().fixedText  = $"بروتينات {foodData.Protein}ج";
+            carbsText.GetComponent<ArabicFixerTMPRO>().fixedText = $"كربوهيدرات {foodData.Carbs}ج";
+            fatsText.GetComponent<ArabicFixerTMPRO>().fixedText = $"دهون {foodData.Fats}ج";
         }
     }
 

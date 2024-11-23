@@ -11,7 +11,7 @@ public class ItemObjectScript : MonoBehaviour
     {
         nameLabel.text = foodData.Name;
         countLabel.text = $"x{foodData.Quantity}";
-        caloriesLabel.text = $"{foodData.Calories * foodData.Quantity} kcal";
+        caloriesLabel.text = $"{(int)(foodData.Calories * foodData.Quantity)} kcal";
     }
 
     public void SetItemData(string name, string count, string calories)

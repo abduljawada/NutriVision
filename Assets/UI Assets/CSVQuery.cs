@@ -27,8 +27,8 @@ public class CSVQuery
                     {
                         Name = values[0],
                         Calories = float.Parse(values[1]),
-                        Protein = float.Parse(values[2]),
-                        Carbs = float.Parse(values[3]),
+                        Carbs = float.Parse(values[2]),
+                        Protein = float.Parse(values[3]),
                         Fats = float.Parse(values[4])
                     };
                 }

@@ -48,7 +48,7 @@ public class JournalManager
         string formattedTimestamp = parsedTimestamp.ToString("MMM dd, yyyy - hh:mm tt"); // Example: Nov 23, 2024 - 05:00 PM
 
         GameObject newEntry = UnityEngine.Object.Instantiate(entryPrefab, scrollViewContent);
-        newEntry.GetComponent<EntryObjectScript>().SetEntryData(formattedTimestamp, entry.totalCalories.ToString());
+        newEntry.GetComponent<EntryObjectScript>().SetEntryData(formattedTimestamp, ((int)entry.totalCalories).ToString());
 
         // Add food items to the entry
         if (entry.foodItems != null && entry.foodItems.Count > 0)
@@ -56,7 +56,7 @@ public class JournalManager
             foreach (var foodItem in entry.foodItems.Values)
             {
                 GameObject newItem = UnityEngine.Object.Instantiate(itemPrefab, newEntry.transform);
-                newItem.GetComponent<ItemObjectScript>().SetItemData(foodItem.name, foodItem.quantity.ToString(), foodItem.calories.ToString());
+                newItem.GetComponent<ItemObjectScript>().SetItemData(foodItem.name, foodItem.quantity.ToString(), ((int)foodItem.calories).ToString());
                 Debug.Log($"JournalManager retrieved: {foodItem.quantity} {foodItem.name}");
             }
         }

@@ -93,10 +93,10 @@ public class UIManager : MonoBehaviour
         if (foodnameArabicFixer == null)
         {
             foodNameText.text = foodData.Name;
-            caloriesText.text = $"{foodData.Calories}\nkCal";
-            proteinText.text = $"Protein\t{foodData.Protein}g";
-            carbsText.text = $"Carbs\t{foodData.Carbs}g";
-            fatsText.text = $"Fats\t\t{foodData.Fats}g";
+            caloriesText.text = $"{(int)foodData.Calories}\nkCal";
+            proteinText.text = $"Protein\t{foodData.Protein.ToString("F1")}g";
+            carbsText.text = $"Carbs\t{foodData.Carbs.ToString("F1")}g";
+            fatsText.text = $"Fats\t\t{foodData.Fats.ToString("F1")}g";
         }
         else
         {
@@ -139,10 +139,10 @@ public class UIManager : MonoBehaviour
     {
         //Update total nutritional values
         var totals = foodManager.GetTotals();
-        totalCaloriesText.text = $"{totals.totalCalories}\nkCal";
-        totalProteinText.text = $"{totals.totalProtein}g";
-        totalCarbsText.text = $"{totals.totalCarbs}g";
-        totalFatsText.text = $"{totals.totalFats}g";
+        totalCaloriesText.text = $"{(int)totals.totalCalories}\nkCal";
+        totalProteinText.text = $"Protein\t{totals.totalProtein.ToString("F1")}g";
+        totalCarbsText.text = $"Carbs\t{totals.totalCarbs.ToString("F1")}g";
+        totalFatsText.text = $"Fats\t\t{totals.totalFats.ToString("F1")}g";
         totalQuantText.text = $"{totals.totalQuantity} Items";
     }
 

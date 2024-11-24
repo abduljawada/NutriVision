@@ -71,7 +71,7 @@ public class CameraUpdate : MonoBehaviour
                 //}
                 //else
                 //{
-                    webcamTexture = new WebCamTexture(devicename, 720, 1080, 30)
+                    webcamTexture = new WebCamTexture(devicename, 640, 640, 30)
                     {
                         wrapMode = TextureWrapMode.Mirror
                     };

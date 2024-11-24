@@ -11,6 +11,14 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Main.unity
     guid: 8c9cfa26abfee488c85f1582747f6a02
+  - enabled: 0
+    path: Assets/Scenes/ReadQRCode.unity
+    guid: 1f175f7ebaae54d6280eee78acf42218
   m_configObjects:
+    UnityEditor.XR.ARCore.ARCoreSettings: {fileID: 11400000, guid: b964a59d108a74b729e5d0f84e5488b9, type: 2}
+    UnityEditor.XR.ARKit.ARKitSettings: {fileID: 11400000, guid: 60487508a320f453499687fca60b4b80, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+    com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: e28a08db0de334cb79b5d047c506ef00, type: 2}
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: bdeacb782e524431498ee5e0fb8971b8, type: 2}
+    com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 18e7f91001f9a4a078a2c622d8caaa0e, type: 2}
   m_UseUCBPForAssetBundles: 0

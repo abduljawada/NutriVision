@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Sentis;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class RunModel : MonoBehaviour
 {
     [SerializeField] private ModelAsset modelAsset;
-    [SerializeField] private RawImage displayImage;
+    //[SerializeField] private RawImage displayImage;
     [SerializeField] private CameraUpdate cam;
     [SerializeField] private GameObject objectBox;
 
@@ -61,7 +60,7 @@ public class RunModel : MonoBehaviour
         targetRT = new RenderTexture(imageWidth, imageHeight, 0);
 
         //Create image to display video
-        displayLocation = displayImage.transform;
+        //displayLocation = displayImage.transform;
     }
     void LoadModel()
     {
@@ -125,11 +124,11 @@ public class RunModel : MonoBehaviour
         output?.Dispose();
         labelIDs.Dispose();
 
-        float displayWidth = displayImage.rectTransform.rect.width;
-        float displayHeight = displayImage.rectTransform.rect.height;
+        //float displayWidth = displayImage.rectTransform.rect.width;
+        //float displayHeight = displayImage.rectTransform.rect.height;
 
-        float scaleX = displayWidth / imageWidth;
-        float scaleY = displayHeight / imageHeight;
+        //float scaleX = displayWidth / imageWidth;
+        //float scaleY = displayHeight / imageHeight;
 
         int boxesFound = cpuOutput.shape[0];
 

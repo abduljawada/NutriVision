@@ -86,6 +86,12 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    public void OnFoodSelected(FoodData foodData)
+    {
+        foodManager.SelectFood(foodData);
+        DisplayFoodData(foodData);
+    }
+
     private void DisplayFoodData(FoodData foodData)
     {
         var foodnameArabicFixer =  foodNameText.GetComponent<ArabicFixerTMPRO>();

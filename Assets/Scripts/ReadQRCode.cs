@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Rendering;
 using ZXing;
@@ -9,11 +10,9 @@ using ZXing;
 public class ReadQRCode : MonoBehaviour
 {
     [SerializeField] OpenFoodFactsTest openFoodFactsTest;
-    public Camera ARCamera;
-    public Camera QRCamera;
+    [SerializeField] private Camera ARCamera;
+    [SerializeField] private Camera QRCamera;
     private bool grabQR;
-    private float timeSinceLastCapture;
-    [SerializeField] private float timeBtwCapture = 0.25f;
     
     /// <summary>
     /// Match the Unity camera used for QR Code scanning with the one used by ARFoundation 
@@ -53,18 +52,15 @@ public class ReadQRCode : MonoBehaviour
     public void Start()
     {
         QRCamera.enabled = false;
-        Application.runInBackground = true;
     }
 
     private void Update()
     {
-        timeSinceLastCapture += Time.deltaTime;
-        if (timeSinceLastCapture >= timeBtwCapture)
+        // Scan QRCode 
+        if (QRButton.clicked)
         {
-            grabQR = true;
             QRCamera.enabled = true;
-            // Debug.Log("Enabling Camera");
-            timeSinceLastCapture = 0;
+            grabQR = true;
         }
     }
     /// <summary>
@@ -77,15 +73,13 @@ public class ReadQRCode : MonoBehaviour
             //Create a new texture with the width and height of the screen
             Texture2D QRTexture = new Texture2D(Screen.width, Screen.height, TextureFormat.RGB24, false);
             //Read the pixels in the Rect starting at 0,0 and ending at the screen's width and height
-            QRTexture.ReadPixels(new Rect(0, 0, 1, 1), 0, 0, false);
+            QRTexture.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0, false);
             QRTexture.Apply();
 
             //Reset the grab state
             grabQR = false;
             // No need for the QR camera
             QRCamera.enabled = false;
-            // Debug.Log("Disabling Camera");
-
 
             // Scan Barcode using ZXing 
             try
@@ -96,17 +90,23 @@ public class ReadQRCode : MonoBehaviour
                 if (result != null)
                 {
                     Debug.Log("QR Text:" + result.Text);
-                    //FoodData foodData = await openFoodFactsTest.FetchProduct(result.Text);
-                    //if (foodData != null)
-                    //{
-                        //UIManager.Instance.OnFoodSelected(foodData);
-                    //}
+                    FetchAPI(result.Text);
                 }
             }
             catch (Exception e)
             {
                 Debug.Log("Error when capturing camera texture: " + e);
             }
+        }
+    }
+    
+    private async Task FetchAPI(string result)
+    {
+        FoodData foodData = await openFoodFactsTest.FetchProduct(result);
+        Debug.Log("Food Data: " + foodData.Name);
+        if (foodData != null)
+        {
+            UIManager.Instance.OnFoodSelected(foodData);
         }
     }
 }

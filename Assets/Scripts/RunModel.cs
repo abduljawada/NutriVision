@@ -3,44 +3,28 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Sentis;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class RunModel : MonoBehaviour
 {
     [SerializeField] private ModelAsset modelAsset;
-    //[SerializeField] private RawImage displayImage;
-    [SerializeField] private CameraUpdate cam;
-    [SerializeField] private GameObject objectBox;
+    [SerializeField] private Camera QRCamera;
 
-
-    private Transform displayLocation;
     private Worker worker;
-    private RenderTexture targetRT;
 
     private const int imageWidth = 640;
     private const int imageHeight = 640;
 
-    List<GameObject> boxPool = new();
-
     [SerializeField, Range(0, 1)] float iouThreshold = 0.5f;
     [SerializeField, Range(0, 1)] float scoreThreshold = 0.5f;
 
-    private float lastDetectionTime;
 
     const int k_LayersPerFrame = 20;
     IEnumerator m_Schedule;
     bool m_Started = false;
-
+    private bool processFrame = false;
 
     Tensor<float> centersToCorners;
-    //bounding box data
-    public struct BoundingBox
-    {
-        public float centerX;
-        public float centerY;
-        public float width;
-        public float height;
-        public string label;
-    }
 
     public void SetScoreThreshold(float newScoreThreshold)
     {
@@ -54,16 +38,7 @@ public class RunModel : MonoBehaviour
 
     void Start()
     {
-
-        LoadModel();
-
-        targetRT = new RenderTexture(imageWidth, imageHeight, 0);
-
-        //Create image to display video
-        //displayLocation = displayImage.transform;
-    }
-    void LoadModel()
-    {
+        
         //Load model
         Model sourceModel = ModelLoader.Load(modelAsset);
 
@@ -86,10 +61,8 @@ public class RunModel : MonoBehaviour
         FunctionalTensor classIDs = Functional.ArgMax(allScores, 0);                          //shape=(8400) 
         FunctionalTensor boxCorners = Functional.MatMul(boxCoords, Functional.Constant(centersToCorners));
         FunctionalTensor indices = Functional.NMS(boxCorners, scores, iouThreshold, scoreThreshold);           //shape=(N)
-        FunctionalTensor indices2 = indices.Unsqueeze(-1).BroadcastTo(new int[] { 4 });//shape=(N,4)
-        FunctionalTensor coords = Functional.Gather(boxCoords, 0, indices2);                  //shape=(N,4)
         FunctionalTensor labelIDs = Functional.Gather(classIDs, 0, indices);                  //shape=(N)
-        Model runtimeModel = graph.Compile(coords, labelIDs);
+        Model runtimeModel = graph.Compile(labelIDs);
 
         //Create engine to run model
         worker = new(runtimeModel, BackendType.GPUCompute);
@@ -99,62 +72,76 @@ public class RunModel : MonoBehaviour
     {
         if (!m_Started)
         {
-            ProcessFrame();
+            QRCamera.enabled = true;
+            processFrame = true;
         }
     }
 
-    private async void ProcessFrame()
-    {
-        if (!cam.webcamTexture) return;
+    void OnEnable()
+        {
+        RenderPipelineManager.endCameraRendering += RenderPipelineManager_endCameraRendering;
+    }
 
+    void OnDisable()
+    {
+        RenderPipelineManager.endCameraRendering -= RenderPipelineManager_endCameraRendering;
+    }
+
+    private void RenderPipelineManager_endCameraRendering(ScriptableRenderContext context, Camera camera)
+    {
+        OnPostRender();
+    }
+
+    private async void OnPostRender()
+    {
+        if (!processFrame) return;
+
+        processFrame = false;
         m_Started = true;
 
-        using Tensor<float> input = TextureConverter.ToTensor(cam.webcamTexture, imageWidth, imageHeight, 3);
+        Debug.Log("Processing Frame");
 
-        var outputs = await ForwardAsync(worker, input);
+        //Create a new texture with the width and height of the screen
+        Texture2D QRTexture = new Texture2D(Screen.width, Screen.height, TextureFormat.RGB24, false);
+        //Read the pixels in the Rect starting at 0,0 and ending at the screen's width and height
+        QRTexture.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0, false);
+        QRTexture.Apply();
+
+        Debug.Log("Texture Applied");
+
+        using Tensor<float> input = TextureConverter.ToTensor(QRTexture, imageWidth, imageHeight, 3);
+
+        Debug.Log("Texture Converted");
+
+        QRCamera.enabled = false;
+
+        var output = await ForwardAsync(worker, input);
+
+        Debug.Log("Forwarded");
 
         input?.Dispose();
 
-        Tensor<float> output = outputs[0] as Tensor<float>;
-        Tensor<int> labelIDs = outputs[1] as Tensor<int>;
+        var cpuOutput = output.ReadbackAndClone();
 
-        var cpuOutput = await output.ReadbackAndCloneAsync();
-        var cpuLabelIDs = await labelIDs.ReadbackAndCloneAsync();
+        Debug.Log("Readback");
 
         output?.Dispose();
-        labelIDs.Dispose();
-
-        //float displayWidth = displayImage.rectTransform.rect.width;
-        //float displayHeight = displayImage.rectTransform.rect.height;
-
-        //float scaleX = displayWidth / imageWidth;
-        //float scaleY = displayHeight / imageHeight;
 
         int boxesFound = cpuOutput.shape[0];
 
-        ClearAnnotations();
+        Debug.Log(boxesFound);
 
         if (boxesFound > 0)
         {
-            //var box = new BoundingBox
-            //{
-                //centerX = cpuOutput[0, 0] * scaleX - displayWidth / 2,
-                //centerY = cpuOutput[0, 1] * scaleY - displayHeight / 2,
-                //width = cpuOutput[0, 2] * scaleX,
-                //height = cpuOutput[0, 3] * scaleY,
-                //label = labels[cpuLabelIDs[0]],
-            //};
-
-            UIManager.Instance.OnFoodSelected(cpuLabelIDs[0]);
-            //DrawBox(box, 0);
+            UIManager.Instance.OnFoodSelected(cpuOutput[0]);
+            Debug.Log("Food Selected" + cpuOutput[0]);
         }
 
         m_Started = false;
         cpuOutput?.Dispose();
-        cpuLabelIDs?.Dispose();
     }
 
-    private async Task<Tensor[]> ForwardAsync(Worker modelWorker, Tensor inputs)
+    private async Task<Tensor<int>> ForwardAsync(Worker modelWorker, Tensor inputs)
     {
         var executor = worker.ScheduleIterable(inputs);
         var it = 0;
@@ -168,53 +155,9 @@ public class RunModel : MonoBehaviour
             }
         } while (hasMoreWork);
 
-        var result1 = modelWorker.PeekOutput("output_0") as Tensor<float>;
-        var result2 = modelWorker.PeekOutput("output_1") as Tensor<int>;
+        var result = modelWorker.PeekOutput() as Tensor<int>;
 
-        Tensor[] results = {result1, result2};
-        return results;
-    }
-
-    private void DrawBox(BoundingBox box, int id)
-    {
-        //Create the bounding box graphic or get from pool
-        GameObject panel;
-        if (id < boxPool.Count)
-        {
-            panel = boxPool[id];
-            panel.SetActive(true);
-        }
-        else
-        {
-            panel = CreateNewBox();
-        }
-        //Set box position
-        panel.transform.localPosition = new Vector3(box.centerX, -box.centerY);
-
-        //Set box size
-        RectTransform rt = panel.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(box.width, box.height);
-
-        //var label = panel.GetComponentInChildren<TMP_Text>();
-        //label.text = box.label;
-        //label.fontSize = (int)fontSize;
-    }
-
-    public GameObject CreateNewBox()
-    {
-        //Create the box
-        var panel = Instantiate(objectBox, displayLocation);
-
-        boxPool.Add(panel);
-        return panel;
-    }
-
-    public void ClearAnnotations()
-    {
-        foreach (var box in boxPool)
-        {
-            box.SetActive(false);
-        }
+        return result;
     }
 
     private void OnDestroy()

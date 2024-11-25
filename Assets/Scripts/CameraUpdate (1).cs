@@ -2,12 +2,17 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class CameraUpdate : MonoBehaviour
+public class CameraUpdate2 : MonoBehaviour
 {
-    public WebCamTexture webcamTexture { get; private set; }
+    [SerializeField] private RawImage rawImage;//相机渲染的UI
+    public WebCamTexture webcamTexture;
  
     void Start()
     {
+        //Application.targetFrameRate = 30;
+        //webcamTexture = new WebCamTexture(640, 640, 10);
+        //rawImage.texture = webcamTexture;
+        //webcamTexture.Play();
         StartCoroutine("OpenCamera");
     }
  
@@ -23,6 +28,12 @@ public class CameraUpdate : MonoBehaviour
             if (webcamTexture != null)
             {
                 webcamTexture.Stop();
+            }
+ 
+            //打开渲染图
+            if (rawImage != null)
+            {
+                rawImage.gameObject.SetActive(true);
             }
 
             // 监控第一次授权，是否获得到设备（因为很可能第一次授权了，但是获得不到设备，这里这样避免）
@@ -41,10 +52,38 @@ public class CameraUpdate : MonoBehaviour
             else
             {
                 string devicename = devices[0].name;
-                webcamTexture = new WebCamTexture(devicename, 640, 640, 30)
+
+                //Resolution[] resolutions = devices[0].availableResolutions;
+                //if (resolutions != null)
+                //{
+                    //int best = 0;
+                    //for (int j = 0; j < resolutions.Length; j++)
+                    //{
+                        //Debug.Log("Resoltions for Camera " + $" Width: {resolutions[j].width}, Height: {resolutions[j].height}, Refresh Rate: {resolutions[j].refreshRateRatio}");
+                        //if (resolutions[j].width < resolutions[best].width && resolutions[j].width <= 640)
+                        //{
+                            //best = j;
+                        //}
+                    //}
+                    //webcamTexture = new WebCamTexture(devicename, resolutions[best].width, resolutions[best].height);
+                    //Debug.Log(resolutions[best].width + "x" + resolutions[best].height);
+                    //rawImage.GetComponent<RectTransform>().sizeDelta = new Vector2(320, resolutions[best].height * 320 / resolutions[best].width);  
+                //}
+                //else
+                //{
+                    webcamTexture = new WebCamTexture(devicename, 720, 1080, 30)
+                    {
+                        wrapMode = TextureWrapMode.Mirror
+                    };
+                //}
+
+
+
+                // 渲染到 UI 或者 游戏物体上
+                if (rawImage != null)
                 {
-                    wrapMode = TextureWrapMode.Mirror
-                };
+                    rawImage.texture = webcamTexture;
+                }
                 webcamTexture.Play();
             }
         }
@@ -68,6 +107,7 @@ public class CameraUpdate : MonoBehaviour
                 webcamTexture.Play();
             }
         }
+        
     }
     
     private void OnDestroy()

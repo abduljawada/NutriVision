@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.Rendering;
 using ZXing;
+using ZXing.Common;
 
 /// <summary>
 /// Reads QRCode from standard camera (It does not use the ARFoundation ARKit camera)
@@ -11,6 +12,7 @@ public class ReadQRCode : MonoBehaviour
     [SerializeField] OpenFoodFactsTest openFoodFactsTest;
     [SerializeField] private CameraUpdate cam;
     private bool grabQR;
+    private IBarcodeReader barcodeReader;
     //private float timeSinceLastCapture;
     //[SerializeField] private float timeBtwCapture = 0.25f;
     
@@ -33,6 +35,19 @@ public class ReadQRCode : MonoBehaviour
         OnPostRender();
     }
 
+    private void Start()
+    {
+                // Initialize the barcode reader
+        barcodeReader = new BarcodeReader
+        {
+            AutoRotate = true,
+            Options = new DecodingOptions
+            {
+                TryHarder = true
+            }
+        };
+    }
+
     private void Update()
     {
         //timeSinceLastCapture += Time.deltaTime;
@@ -47,27 +62,32 @@ public class ReadQRCode : MonoBehaviour
     /// <summary>
     /// Scan QRCode using ZXing
     /// </summary>
-    private void OnPostRender()
+    private async void OnPostRender()
     {
-        if (grabQR)
+        if (grabQR && cam.webcamTexture != null && cam.webcamTexture.isPlaying)
         {
             //Reset the grab state
             grabQR = false;
 
+            Debug.Log("Scanning QR Code");
             // Scan Barcode using ZXing 
             try
             {
                 IBarcodeReader barcodeReader = new BarcodeReader();
-                // decode the current frame from QRCamera
-                var result = barcodeReader.Decode(cam.webcamTexture.GetPixels32(), cam.webcamTexture.width, cam.webcamTexture.height);
+
+                // Get the webcam frame as a Color32 array
+                Color32[] frame = cam.webcamTexture.GetPixels32();
+
+                // Decode the barcode
+                var result = barcodeReader.Decode(frame, cam.webcamTexture.width, cam.webcamTexture.height);
                 if (result != null)
                 {
                     Debug.Log("QR Text:" + result.Text);
-                    //FoodData foodData = await openFoodFactsTest.FetchProduct(result.Text);
-                    //if (foodData != null)
-                    //{
-                        //UIManager.Instance.OnFoodSelected(foodData);
-                    //}
+                    FoodData foodData = await openFoodFactsTest.FetchProduct(result.Text);
+                    if (foodData != null)
+                    {
+                        UIManager.Instance.OnFoodSelected(foodData);
+                    }
                 }
             }
             catch (Exception e)

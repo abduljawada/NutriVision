@@ -71,7 +71,7 @@ public class CameraUpdate : MonoBehaviour
                 //}
                 //else
                 //{
-                    webcamTexture = new WebCamTexture(devicename, 720, 1080, 30)
+                    webcamTexture = new WebCamTexture(devicename, 1280, 720, 30)
                     {
                         wrapMode = TextureWrapMode.Mirror
                     };
@@ -85,6 +85,7 @@ public class CameraUpdate : MonoBehaviour
                     rawImage.texture = webcamTexture;
                 }
                 webcamTexture.Play();
+                //Debug.LogError(webcamTexture.width + "x" + webcamTexture.height);
             }
         }
         else {

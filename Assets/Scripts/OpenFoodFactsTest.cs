@@ -57,7 +57,7 @@ public class OpenFoodFactsTest : MonoBehaviour
             }
             else
             {
-                Debug.LogError("Product not found or invalid response.");
+                Debug.LogError(productCode + " not found or invalid response.");
                 return null;
             }
         }

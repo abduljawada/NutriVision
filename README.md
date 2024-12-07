@@ -2,6 +2,10 @@
 
 HoloLens Version: https://github.com/abduljawada/NutriVision-HoloLens
 
+## Architecture
+
+![Architecture](https://github.com/abduljawada/NutriVision/blob/main/nv.png)
+
 ---
 
 This project heavily reuses code from the following:
